@@ -33,7 +33,9 @@ export function SourceTable() {
   const { data, isLoading } = useQuery({
     queryKey: ['sources'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/sources');
+      const res = await fetch('/api/admin/sources', {
+        credentials: 'include'
+      });
       if (!res.ok) throw new Error('Failed to fetch sources');
       return res.json();
     }
@@ -44,7 +46,8 @@ export function SourceTable() {
     mutationFn: async (sourceId: string) => {
       setImportingId(sourceId);
       const res = await fetch(`/api/admin/sources/${sourceId}/import`, {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'include'
       });
       if (!res.ok) throw new Error('Import failed');
       return res.json();
@@ -72,7 +75,8 @@ export function SourceTable() {
   const deleteMutation = useMutation({
     mutationFn: async (sourceId: string) => {
       const res = await fetch(`/api/admin/sources/${sourceId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       });
       if (!res.ok) throw new Error('Delete failed');
       return res.json();

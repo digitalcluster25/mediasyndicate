@@ -60,6 +60,7 @@ export function SourceForm({ open, onOpenChange }: Props) {
       const res = await fetch('/api/admin/sources/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ url })
       });
       const data = await res.json();
@@ -80,6 +81,7 @@ export function SourceForm({ open, onOpenChange }: Props) {
       const res = await fetch('/api/admin/sources', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data)
       });
       if (!res.ok) {
