@@ -1,22 +1,33 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getSession } from '@/lib/auth/session';
+import { verifySession } from '@/lib/auth/session';
 
 export async function middleware(request: NextRequest) {
-  // Защита всех /admin/* роутов (кроме /admin/login)
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    // Разрешить доступ к /admin/login
-    if (request.nextUrl.pathname === '/admin/login') {
-      return NextResponse.next();
+  const path = request.nextUrl.pathname;
+  
+  // Пропустить /admin/login БЕЗ проверки сессии
+  if (path === '/admin/login' || path.startsWith('/admin/login/')) {
+    return NextResponse.next();
+  }
+  
+  // Для всех остальных /admin/* - проверить сессию
+  if (path.startsWith('/admin')) {
+    const token = request.cookies.get('admin-session')?.value;
+    
+    if (!token) {
+      // Нет токена → редирект на логин
+      const loginUrl = new URL('/admin/login', request.url);
+      loginUrl.searchParams.set('from', path);
+      return NextResponse.redirect(loginUrl);
     }
-
-    // Проверить сессию
-    const session = await getSession();
+    
+    // Проверить валидность токена
+    const session = await verifySession(token);
     
     if (!session) {
-      // Нет сессии → редирект на логин
+      // Токен невалиден → редирект на логин
       const loginUrl = new URL('/admin/login', request.url);
-      loginUrl.searchParams.set('from', request.nextUrl.pathname);
+      loginUrl.searchParams.set('from', path);
       return NextResponse.redirect(loginUrl);
     }
   }
@@ -27,4 +38,3 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: '/admin/:path*'
 };
-
