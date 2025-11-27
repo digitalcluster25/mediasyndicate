@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
   }
   
   // Для всех /admin/* - проверить сессию
-  if (path.startsWith('/admin')) {
+  if (path.startsWith('/admin/')) {
     const token = request.cookies.get('admin-session')?.value;
     
     if (!token) {
