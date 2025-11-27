@@ -23,7 +23,7 @@ function LoginForm() {
       const res = await fetch('/api/admin/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // ВАЖНО! Для cookies
+        credentials: 'include',
         body: JSON.stringify({ username, password })
       });
 
@@ -39,12 +39,13 @@ function LoginForm() {
       if (data.success) {
         const from = searchParams.get('from') || '/adminko/sources';
         router.push(from);
-        router.refresh(); // ВАЖНО! Обновить сессию
+        router.refresh();
       } else {
         setError(data.error || 'Login failed');
       }
     } catch (err) {
-      setError('Network error');
+      setError('Network error. Check console.');
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
@@ -83,7 +84,7 @@ function LoginForm() {
           </div>
 
           {error && (
-            <div className="text-sm text-red-600">
+            <div className="text-sm text-red-600 bg-red-50 p-3 rounded">
               ❌ {error}
             </div>
           )}
@@ -101,7 +102,7 @@ function LoginForm() {
   );
 }
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
       <LoginForm />

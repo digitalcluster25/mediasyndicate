@@ -2,7 +2,7 @@ import { getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
-export default async function AdminLayout({
+export default async function SourcesLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -10,7 +10,7 @@ export default async function AdminLayout({
   const session = await getSession();
 
   if (!session) {
-    redirect('/adminko');
+    redirect('/adminko?from=/adminko/sources');
   }
 
   return (
@@ -42,3 +42,4 @@ export default async function AdminLayout({
     </div>
   );
 }
+

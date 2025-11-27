@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
 import { clearSessionCookie } from '@/lib/auth/session';
 
-export async function GET(request: Request) {
+export async function GET() {
   await clearSessionCookie();
-  const url = new URL(request.url);
-  const baseUrl = url.origin;
-  return NextResponse.redirect(new URL('/adminko', baseUrl));
+  
+  // Редирект на логин
+  return NextResponse.redirect(
+    new URL('/adminko', process.env.NEXT_PUBLIC_URL || 'http://localhost:3000')
+  );
 }
 
 export async function POST() {
   await clearSessionCookie();
+  
   return NextResponse.json({
     success: true,
     message: 'Logged out successfully'

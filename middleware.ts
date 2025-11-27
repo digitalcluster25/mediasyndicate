@@ -5,12 +5,12 @@ import { verifySession } from '@/lib/auth/session';
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   
-  // Пропустить /adminko (корневой путь - страница логина)
+  // Пропустить логин
   if (path === '/adminko') {
     return NextResponse.next();
   }
   
-  // Проверить сессию для /adminko/* (подпути)
+  // Проверить сессию для /adminko/*
   if (path.startsWith('/adminko/')) {
     const token = request.cookies.get('admin-session')?.value;
     
