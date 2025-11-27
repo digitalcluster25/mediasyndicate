@@ -1,37 +1,47 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifySession } from '@/lib/auth/session';
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   
   // Пропустить логин
   if (path === '/adminko') {
-    return NextResponse.next();
+    const response = NextResponse.next();
+    
+    // Установить правильные headers для админки
+    response.headers.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    
+    return response;
   }
   
-  // Проверить сессию для /adminko/*
+  // Для /adminko/* проверить cookie
   if (path.startsWith('/adminko/')) {
-    const token = request.cookies.get('admin-session')?.value;
+    const token = request.cookies.get('admin-session-v2')?.value || request.cookies.get('admin-session')?.value;
     
     if (!token) {
       const loginUrl = new URL('/adminko', request.url);
       loginUrl.searchParams.set('from', path);
-      return NextResponse.redirect(loginUrl);
+      const response = NextResponse.redirect(loginUrl);
+      
+      // Установить no-cache headers
+      response.headers.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+      
+      return response;
     }
     
-    const session = await verifySession(token);
+    // Cookie есть - пропустить с правильными headers
+    const response = NextResponse.next();
+    response.headers.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
     
-    if (!session) {
-      const loginUrl = new URL('/adminko', request.url);
-      loginUrl.searchParams.set('from', path);
-      return NextResponse.redirect(loginUrl);
-    }
+    return response;
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/adminko', '/adminko/:path*']
+  matcher: '/adminko/:path*'
 };

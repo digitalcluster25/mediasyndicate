@@ -5,6 +5,9 @@ const SECRET_KEY = new TextEncoder().encode(
   process.env.JWT_SECRET || 'mediasyndicate-secret-key-2024'
 );
 
+const COOKIE_NAME = 'admin-session';
+const COOKIE_VERSION = 'v2'; // Увеличивай при изменении структуры
+
 export interface SessionData {
   username: string;
   isAdmin: true;
@@ -36,7 +39,7 @@ export async function verifySession(token: string): Promise<SessionData | null> 
 
 export async function getSession(): Promise<SessionData | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get('admin-session')?.value;
+  const token = cookieStore.get(`${COOKIE_NAME}-${COOKIE_VERSION}`)?.value;
   
   if (!token) return null;
   
@@ -46,7 +49,11 @@ export async function getSession(): Promise<SessionData | null> {
 export async function setSessionCookie(token: string): Promise<void> {
   const cookieStore = await cookies();
   
-  cookieStore.set('admin-session', token, {
+  // Очистить старые версии
+  cookieStore.delete(`${COOKIE_NAME}-v1`);
+  cookieStore.delete(COOKIE_NAME);
+  
+  cookieStore.set(`${COOKIE_NAME}-${COOKIE_VERSION}`, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -57,6 +64,10 @@ export async function setSessionCookie(token: string): Promise<void> {
 
 export async function clearSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.delete('admin-session');
+  
+  // Очистить все возможные версии
+  cookieStore.delete(COOKIE_NAME);
+  cookieStore.delete(`${COOKIE_NAME}-v1`);
+  cookieStore.delete(`${COOKIE_NAME}-${COOKIE_VERSION}`);
 }
 
