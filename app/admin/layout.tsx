@@ -10,13 +10,13 @@ export default async function AdminLayout({
   const session = await getSession();
 
   if (!session) {
-    redirect('/admin/login');
+    redirect('/admin-login');
   }
 
   const handleLogout = async () => {
     'use server';
     await fetch('/api/admin/auth/logout', { method: 'POST' });
-    redirect('/admin/login');
+    redirect('/admin-login');
   };
 
   return (
