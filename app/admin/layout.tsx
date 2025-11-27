@@ -13,12 +13,6 @@ export default async function AdminLayout({
     redirect('/admin-login');
   }
 
-  const handleLogout = async () => {
-    'use server';
-    await fetch('/api/admin/auth/logout', { method: 'POST' });
-    redirect('/admin-login');
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm border-b">
@@ -31,14 +25,12 @@ export default async function AdminLayout({
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">{session.username}</span>
-              <form action={handleLogout}>
-                <button
-                  type="submit"
-                  className="text-sm text-red-600 hover:text-red-800"
-                >
-                  Выйти
-                </button>
-              </form>
+              <Link
+                href="/api/admin/auth/logout"
+                className="text-sm text-red-600 hover:text-red-800"
+              >
+                Выйти
+              </Link>
             </div>
           </div>
         </div>
@@ -50,4 +42,3 @@ export default async function AdminLayout({
     </div>
   );
 }
-
