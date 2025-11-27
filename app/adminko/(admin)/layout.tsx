@@ -10,7 +10,7 @@ export default async function AdminLayout({
   const session = await getSession();
 
   if (!session) {
-    redirect('/adminko-login');
+    redirect('/adminko');
   }
 
   return (
