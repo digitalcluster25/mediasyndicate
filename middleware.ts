@@ -5,17 +5,17 @@ import { verifySession } from '@/lib/auth/session';
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   
-  // Пропустить /admin-login БЕЗ проверки
-  if (path === '/admin-login' || path.startsWith('/admin-login/')) {
+  // Пропустить /adminko-login
+  if (path === '/adminko-login' || path.startsWith('/adminko-login/')) {
     return NextResponse.next();
   }
   
-  // Для всех /admin/* - проверить сессию
-  if (path.startsWith('/admin/')) {
+  // Проверить сессию для /adminko/*
+  if (path.startsWith('/adminko/')) {
     const token = request.cookies.get('admin-session')?.value;
     
     if (!token) {
-      const loginUrl = new URL('/admin-login', request.url);
+      const loginUrl = new URL('/adminko-login', request.url);
       loginUrl.searchParams.set('from', path);
       return NextResponse.redirect(loginUrl);
     }
@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
     const session = await verifySession(token);
     
     if (!session) {
-      const loginUrl = new URL('/admin-login', request.url);
+      const loginUrl = new URL('/adminko-login', request.url);
       loginUrl.searchParams.set('from', path);
       return NextResponse.redirect(loginUrl);
     }
@@ -33,5 +33,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/admin/:path*'
+  matcher: '/adminko/:path*'
 };

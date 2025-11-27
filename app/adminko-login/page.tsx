@@ -23,14 +23,23 @@ function LoginForm() {
       const res = await fetch('/api/admin/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ВАЖНО! Для cookies
         body: JSON.stringify({ username, password })
       });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Login failed');
+        setLoading(false);
+        return;
+      }
 
       const data = await res.json();
 
       if (data.success) {
-        const from = searchParams.get('from') || '/admin/sources';
+        const from = searchParams.get('from') || '/adminko/sources';
         router.push(from);
+        router.refresh(); // ВАЖНО! Обновить сессию
       } else {
         setError(data.error || 'Login failed');
       }

@@ -5,7 +5,7 @@ export async function GET(request: Request) {
   await clearSessionCookie();
   const url = new URL(request.url);
   const baseUrl = url.origin;
-  return NextResponse.redirect(new URL('/admin-login', baseUrl));
+  return NextResponse.redirect(new URL('/adminko-login', baseUrl));
 }
 
 export async function POST() {

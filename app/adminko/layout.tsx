@@ -10,7 +10,7 @@ export default async function AdminLayout({
   const session = await getSession();
 
   if (!session) {
-    redirect('/admin-login');
+    redirect('/adminko-login');
   }
 
   return (
@@ -19,7 +19,7 @@ export default async function AdminLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link href="/admin/sources" className="text-xl font-bold">
+              <Link href="/adminko/sources" className="text-xl font-bold">
                 MediaSyndicate Admin
               </Link>
             </div>
