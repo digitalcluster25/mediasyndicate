@@ -1,0 +1,24 @@
+=== Lines of Code ===
+      13 lib/prisma.ts
+      14 lib/config.ts
+      20 app/layout.tsx
+      21 app/api/import/route.ts
+      27 app/api/health/route.ts
+      43 app/page.tsx
+      50 lib/services/RSSParser.ts
+      82 lib/services/ImportService.ts
+     270 total
+
+=== File Count ===
+       8
+
+=== Largest Files ===
+     270 total
+      82 lib/services/ImportService.ts
+      50 lib/services/RSSParser.ts
+      43 app/page.tsx
+      27 app/api/health/route.ts
+      21 app/api/import/route.ts
+      20 app/layout.tsx
+      14 lib/config.ts
+      13 lib/prisma.ts

@@ -1,3 +1,13 @@
+# TASK-012: Fix Next.js Listen Address
+
+## ПРОБЛЕМА
+Next.js слушает только на localhost внутри контейнера
+Traefik не может достучаться
+
+## ДЛЯ CURSOR
+
+Создай файл: server.js
+
 const { createServer } = require("http");
 const { parse } = require("url");
 const next = require("next");
@@ -17,4 +27,15 @@ app.prepare().then(() => {
   });
 });
 
+Обнови package.json:
+"start": "node server.js"
 
+## КОММИТ
+git add server.js package.json
+git commit -m "fix: listen on 0.0.0.0 for Docker"
+git push
+
+## КРИТЕРИИ
+- server.js создан
+- package.json обновлен
+- Push OK

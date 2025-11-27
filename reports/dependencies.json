@@ -1,0 +1,123 @@
+{
+  "version": "0.1.0",
+  "name": "mediasyndicate",
+  "problems": [
+    "extraneous: @emnapi/runtime@1.7.1 /Users/macbookpro/Desktop/mediasyndicate/node_modules/@emnapi/runtime"
+  ],
+  "dependencies": {
+    "@emnapi/runtime": {
+      "version": "1.7.1",
+      "resolved": "https://registry.npmjs.org/@emnapi/runtime/-/runtime-1.7.1.tgz",
+      "overridden": false,
+      "extraneous": true,
+      "problems": [
+        "extraneous: @emnapi/runtime@1.7.1 /Users/macbookpro/Desktop/mediasyndicate/node_modules/@emnapi/runtime"
+      ]
+    },
+    "@prisma/client": {
+      "version": "5.22.0",
+      "resolved": "https://registry.npmjs.org/@prisma/client/-/client-5.22.0.tgz",
+      "overridden": false
+    },
+    "@types/node": {
+      "version": "20.19.25",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.25.tgz",
+      "overridden": false
+    },
+    "@types/react-dom": {
+      "version": "18.3.7",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-18.3.7.tgz",
+      "overridden": false
+    },
+    "@types/react": {
+      "version": "18.3.27",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-18.3.27.tgz",
+      "overridden": false
+    },
+    "autoprefixer": {
+      "version": "10.4.22",
+      "resolved": "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.4.22.tgz",
+      "overridden": false
+    },
+    "cloc": {
+      "version": "2.6.0-cloc",
+      "resolved": "https://registry.npmjs.org/cloc/-/cloc-2.6.0-cloc.tgz",
+      "overridden": false
+    },
+    "eslint-config-next": {
+      "version": "15.5.6",
+      "resolved": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-15.5.6.tgz",
+      "overridden": false
+    },
+    "eslint-plugin-complexity": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/eslint-plugin-complexity/-/eslint-plugin-complexity-1.0.2.tgz",
+      "overridden": false
+    },
+    "eslint": {
+      "version": "8.57.1",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-8.57.1.tgz",
+      "overridden": false
+    },
+    "jscpd": {
+      "version": "4.0.5",
+      "resolved": "https://registry.npmjs.org/jscpd/-/jscpd-4.0.5.tgz",
+      "overridden": false
+    },
+    "madge": {
+      "version": "8.0.0",
+      "resolved": "https://registry.npmjs.org/madge/-/madge-8.0.0.tgz",
+      "overridden": false
+    },
+    "next": {
+      "version": "15.5.6",
+      "resolved": "https://registry.npmjs.org/next/-/next-15.5.6.tgz",
+      "overridden": false
+    },
+    "picomatch": {
+      "version": "4.0.3",
+      "resolved": "https://registry.npmjs.org/picomatch/-/picomatch-4.0.3.tgz",
+      "overridden": false
+    },
+    "postcss": {
+      "version": "8.5.6",
+      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.6.tgz",
+      "overridden": false
+    },
+    "prisma": {
+      "version": "5.22.0",
+      "resolved": "https://registry.npmjs.org/prisma/-/prisma-5.22.0.tgz",
+      "overridden": false
+    },
+    "react-dom": {
+      "version": "19.0.0",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.0.0.tgz",
+      "overridden": false
+    },
+    "react": {
+      "version": "19.0.0",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.0.0.tgz",
+      "overridden": false
+    },
+    "rss-parser": {
+      "version": "3.13.0",
+      "resolved": "https://registry.npmjs.org/rss-parser/-/rss-parser-3.13.0.tgz",
+      "overridden": false
+    },
+    "tailwindcss": {
+      "version": "3.4.18",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.18.tgz",
+      "overridden": false
+    },
+    "tsx": {
+      "version": "4.20.6",
+      "resolved": "https://registry.npmjs.org/tsx/-/tsx-4.20.6.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    }
+  }
+}
