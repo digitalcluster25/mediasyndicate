@@ -36,12 +36,17 @@ export class ImportService {
       } else if (source.type === 'TELEGRAM') {
         // Для Telegram url содержит username канала (например, @uniannet)
         // Lazy load TelegramParser
-        if (!TelegramParser) {
-          const telegramModule = await import('./TelegramParser');
-          TelegramParser = telegramModule.TelegramParser;
+        try {
+          if (!TelegramParser) {
+            const telegramModule = await import('./TelegramParser');
+            TelegramParser = telegramModule.TelegramParser;
+          }
+          feed = await TelegramParser.parse(source.url);
+          console.log(`[ImportService] Telegram channel returned ${feed.items.length} items from ${source.name}`);
+        } catch (error) {
+          console.error(`[ImportService] Telegram parsing failed:`, error);
+          throw new Error(`Telegram parsing failed: ${error instanceof Error ? error.message : String(error)}`);
         }
-        feed = await TelegramParser.parse(source.url);
-        console.log(`[ImportService] Telegram channel returned ${feed.items.length} items from ${source.name}`);
       } else {
         console.warn(`[ImportService] Unknown source type: ${source.type}`);
         return { imported: 0, errors: 0 };
