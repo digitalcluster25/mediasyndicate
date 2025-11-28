@@ -47,6 +47,11 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
+# Copy cheerio (needed for Telegram web scraping)
+COPY --from=builder /app/node_modules/cheerio ./node_modules/cheerio
+COPY --from=builder /app/node_modules/@types/cheerio ./node_modules/@types/cheerio
+COPY --from=builder /app/node_modules/cheerio-select ./node_modules/cheerio-select
+
 USER nextjs
 
 EXPOSE 3000
