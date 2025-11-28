@@ -1,14 +1,9 @@
 /**
- * Telegram Parser - парсинг каналов через RSS Bridge
+ * Telegram Parser - прямой парсинг HTML с https://t.me/s/CHANNEL
  * 
- * ИСПОЛЬЗУЕТ RSS Bridge: https://rsshub.app/telegram/channel/CHANNEL
- * Это обычный RSS feed, парсится через RSSParser
+ * Использует fetch + regex для парсинга HTML без зависимостей
  */
-
-import { RSSParser } from './RSSParser';
-
 export class TelegramParser {
-  private static readonly RSS_BRIDGE_BASE = 'https://rsshub.app/telegram/channel';
 
 
   /**
@@ -49,10 +44,8 @@ export class TelegramParser {
 
 
   /**
-   * Парсинг канала через RSS Bridge - возвращает формат аналогичный RSS
-   * 
-   * ВАЖНО: RSS Hub может быть недоступен из-за Cloudflare защиты.
-   * В этом случае возвращается пустой результат вместо ошибки.
+   * Парсинг канала через прямой HTML парсинг с https://t.me/s/CHANNEL
+   * Использует fetch + regex для извлечения постов
    */
   public static async parse(channelUsername: string): Promise<{
     title: string;
@@ -71,37 +64,98 @@ export class TelegramParser {
     console.log(`[TelegramParser] parse() called with: "${channelUsername}" -> normalized: "${username}"`);
     
     try {
-      // Формируем URL для RSS Bridge
-      const rssUrl = `${this.RSS_BRIDGE_BASE}/${username}`;
-      console.log(`[TelegramParser] Fetching RSS from: ${rssUrl}`);
+      // Формируем URL для парсинга
+      const url = `https://t.me/s/${username}`;
+      console.log(`[TelegramParser] Fetching HTML from: ${url}`);
       
-      // Используем RSSParser для парсинга RSS feed
-      const feed = await RSSParser.parse(rssUrl);
+      // Загружаем HTML страницу
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+      });
       
-      console.log(`[TelegramParser] RSS Bridge returned ${feed.items.length} items from ${username}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch channel page: ${response.status}`);
+      }
+      
+      const html = await response.text();
+      
+      // Парсим посты через regex
+      const posts: Array<{
+        id: string;
+        text: string;
+        date: Date;
+        link: string;
+      }> = [];
+      
+      // Ищем все сообщения в HTML
+      // Telegram использует структуру с data-post атрибутами
+      const messageRegex = /<div[^>]*class="tgme_widget_message[^"]*"[^>]*data-post="([^"]+)"[^>]*>([\s\S]*?)<\/div>\s*<\/div>\s*<\/div>/g;
+      
+      let match;
+      let index = 0;
+      
+      while ((match = messageRegex.exec(html)) !== null && posts.length < 50) {
+        const postId = match[1].split('/').pop() || String(index);
+        const messageHtml = match[2];
+        
+        // Извлекаем текст сообщения
+        const textMatch = messageHtml.match(/<div[^>]*class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+        const text = textMatch 
+          ? textMatch[1].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim()
+          : '';
+        
+        // Извлекаем дату
+        const dateMatch = messageHtml.match(/<time[^>]*datetime="([^"]+)"[^>]*>/);
+        const date = dateMatch ? new Date(dateMatch[1]) : new Date();
+        
+        if (text && text.length > 0) {
+          posts.push({
+            id: postId,
+            text: text,
+            date: date,
+            link: `https://t.me/${username}/${postId}`
+          });
+        }
+        
+        index++;
+      }
+      
+      // Сортируем по дате (новые первыми)
+      const sortedPosts = posts
+        .sort((a, b) => b.date.getTime() - a.date.getTime())
+        .slice(0, 20);
+      
+      console.log(`[TelegramParser] Found ${sortedPosts.length} posts from ${username}`);
+      
+      // Извлекаем название канала
+      const titleMatch = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]+)"/);
+      const title = titleMatch ? titleMatch[1] : `Telegram: ${username}`;
+      
+      // Преобразуем в формат RSS
+      const items = sortedPosts.map((post) => {
+        const titleText = post.text.length > 100 
+          ? post.text.substring(0, 100) + '...'
+          : post.text || `Post #${post.id}`;
+        
+        return {
+          title: titleText,
+          description: post.text,
+          link: post.link,
+          pubDate: post.date,
+          guid: `telegram_${username}_${post.id}`
+        };
+      });
       
       return {
-        title: feed.title || `Telegram: ${username}`,
-        description: feed.description,
-        items: feed.items.map((item) => ({
-          title: item.title,
-          description: item.description,
-          link: item.link,
-          pubDate: item.pubDate || new Date(),
-          guid: item.guid || item.link
-        }))
+        title: title,
+        description: undefined,
+        items
       };
     } catch (error) {
-      // RSS Hub может быть недоступен (Cloudflare, rate limit, timeout)
-      // Вместо ошибки возвращаем пустой результат
-      console.warn(`[TelegramParser] RSS Bridge unavailable for ${username}:`, error instanceof Error ? error.message : String(error));
-      console.warn(`[TelegramParser] RSS Hub may be protected by Cloudflare or rate-limited. Returning empty result.`);
-      
-      return {
-        title: `Telegram: ${username}`,
-        description: undefined,
-        items: []
-      };
+      console.error(`[TelegramParser] Failed to parse channel ${username}:`, error);
+      throw new Error(`Telegram parsing failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }
