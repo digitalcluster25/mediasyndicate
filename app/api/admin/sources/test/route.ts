@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 // import { getSession } from '@/lib/auth/session'; // ЗАКОММЕНТИРОВАНО
 import { RSSParser } from '@/lib/services/RSSParser';
+import { TelegramParser } from '@/lib/services/TelegramParser';
 import { z } from 'zod';
 
 export async function POST(request: Request) {
@@ -12,9 +13,10 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   
-  // Валидация
+  // Валидация - теперь принимает URL или Telegram username
   const schema = z.object({
-    url: z.string().url()
+    url: z.string(),
+    type: z.enum(['RSS', 'TELEGRAM']).optional()
   });
 
   const validation = schema.safeParse(body);
@@ -22,15 +24,34 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: 'Invalid URL'
+        error: 'Invalid input'
       },
       { status: 400 }
     );
   }
 
+  const { url, type } = validation.data;
+  
+  // Определяем тип по URL или используем переданный тип
+  const sourceType = type || (url.startsWith('@') || url.startsWith('https://t.me/') ? 'TELEGRAM' : 'RSS');
+
   try {
-    // Парсить RSS
-    const feed = await RSSParser.parse(validation.data.url);
+    let feed: { items: any[]; title?: string };
+    
+    if (sourceType === 'TELEGRAM') {
+      // Для Telegram извлекаем username из URL
+      let username = url;
+      if (url.startsWith('https://t.me/')) {
+        username = '@' + url.replace('https://t.me/', '').split('/')[0];
+      } else if (!url.startsWith('@')) {
+        username = '@' + url;
+      }
+      
+      feed = await TelegramParser.parse(username);
+    } else {
+      // RSS парсинг
+      feed = await RSSParser.parse(url);
+    }
     
     if (!feed.items || feed.items.length === 0) {
       return NextResponse.json(

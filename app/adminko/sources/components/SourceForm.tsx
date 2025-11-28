@@ -15,8 +15,22 @@ import { useToast } from '@/hooks/use-toast';
 const schema = z.object({
   name: z.string().min(3, 'Минимум 3 символа').max(100),
   type: z.enum(['RSS', 'TELEGRAM']),
-  url: z.string().url('Неверный формат URL'),
+  url: z.string().min(1, 'Обязательное поле'),
   isActive: z.boolean()
+}).refine((data) => {
+  if (data.type === 'RSS') {
+    try {
+      new URL(data.url);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  // Для Telegram принимаем @username или https://t.me/username
+  return data.url.startsWith('@') || data.url.startsWith('https://t.me/') || data.url.length > 0;
+}, {
+  message: 'Для RSS нужен валидный URL, для Telegram - @username или https://t.me/username',
+  path: ['url']
 });
 
 type FormData = z.infer<typeof schema>;
@@ -45,10 +59,12 @@ export function SourceForm({ open, onOpenChange }: Props) {
   // Test connection
   const handleTest = async () => {
     const url = form.getValues('url');
+    const type = form.getValues('type');
+    
     if (!url) {
       toast({
         variant: 'destructive',
-        title: 'Введите URL'
+        title: 'Введите URL или username'
       });
       return;
     }
@@ -61,7 +77,7 @@ export function SourceForm({ open, onOpenChange }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ url, type })
       });
       const data = await res.json();
       setTestResult(data);
@@ -132,11 +148,29 @@ export function SourceForm({ open, onOpenChange }: Props) {
           </div>
 
           <div>
-            <Label htmlFor="url">RSS Feed URL *</Label>
+            <Label htmlFor="type">Тип источника *</Label>
+            <select
+              id="type"
+              {...form.register('type')}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="RSS">RSS Feed</option>
+              <option value="TELEGRAM">Telegram канал</option>
+            </select>
+          </div>
+
+          <div>
+            <Label htmlFor="url">
+              {form.watch('type') === 'TELEGRAM' ? 'Telegram канал *' : 'RSS Feed URL *'}
+            </Label>
             <Input
               id="url"
               {...form.register('url')}
-              placeholder="https://www.kyivpost.com/feed"
+              placeholder={
+                form.watch('type') === 'TELEGRAM' 
+                  ? "@uniannet или https://t.me/uniannet"
+                  : "https://www.kyivpost.com/feed"
+              }
             />
             {form.formState.errors.url && (
               <p className="text-sm text-red-500 mt-1">

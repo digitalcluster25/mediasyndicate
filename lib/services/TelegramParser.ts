@@ -1,0 +1,229 @@
+/**
+ * Telegram Parser - парсинг каналов через Telegram Bot API
+ * 
+ * ВАЖНО: Telegram Bot API имеет ограничения:
+ * - Бот должен быть подписан на канал
+ * - Можно получить только новые сообщения через webhook/getUpdates
+ * - Для истории нужен MTProto клиент (Telethon/Pyrogram)
+ * 
+ * Этот парсер работает с новыми сообщениями через getUpdates.
+ * Для полной истории нужен отдельный сервис на Python с Telethon.
+ */
+
+export interface TelegramPost {
+  id: number;
+  text: string;
+  date: Date;
+  link?: string;
+}
+
+export interface TelegramChannelInfo {
+  title: string;
+  username?: string;
+  description?: string;
+  postsCount: number;
+}
+
+export class TelegramParser {
+  private static readonly BOT_API_URL = 'https://api.telegram.org/bot';
+  private static botToken: string | null = null;
+
+  /**
+   * Инициализация - получение токена из env
+   */
+  private static getBotToken(): string | null {
+    if (!this.botToken) {
+      this.botToken = process.env.TELEGRAM_BOT_TOKEN || null;
+    }
+    return this.botToken;
+  }
+
+  /**
+   * Проверка доступности Telegram API
+   */
+  private static isAvailable(): boolean {
+    return !!this.getBotToken();
+  }
+
+  /**
+   * Получить информацию о канале
+   */
+  public static async getChannelInfo(channelUsername: string): Promise<TelegramChannelInfo> {
+    if (!this.isAvailable()) {
+      throw new Error('TELEGRAM_BOT_TOKEN not configured. Telegram parsing requires bot token.');
+    }
+
+    const token = this.getBotToken()!;
+    const username = channelUsername.startsWith('@') ? channelUsername.slice(1) : channelUsername;
+    
+    try {
+      // Получить информацию о канале через getChat
+      const response = await fetch(`${this.BOT_API_URL}${token}/getChat?chat_id=@${username}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.description || 'Failed to get channel info');
+      }
+
+      const data = await response.json();
+      
+      if (!data.ok) {
+        throw new Error(data.description || 'Failed to get channel info');
+      }
+
+      const chat = data.result;
+
+      return {
+        title: chat.title || username,
+        username: chat.username,
+        description: chat.description,
+        postsCount: 0 // Будет обновлено при парсинге постов
+      };
+    } catch (error) {
+      console.error(`[TelegramParser] Failed to get channel info for @${username}:`, error);
+      throw new Error(`Failed to get channel info: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Получить последние посты из канала через getUpdates
+   * 
+   * ОГРАНИЧЕНИЕ: Работает только если бот подписан на канал и получает новые сообщения
+   */
+  public static async fetchChannelPosts(
+    channelUsername: string,
+    limit: number = 20
+  ): Promise<TelegramPost[]> {
+    if (!this.isAvailable()) {
+      throw new Error('TELEGRAM_BOT_TOKEN not configured');
+    }
+
+    const token = this.getBotToken()!;
+    const username = channelUsername.startsWith('@') ? channelUsername.slice(1) : channelUsername;
+    
+    console.log(`[TelegramParser] Fetching posts from @${username}, limit: ${limit}`);
+
+    try {
+      // Получить последние обновления от бота
+      // Для получения сообщений из канала бот должен быть подписан на канал
+      const response = await fetch(`${this.BOT_API_URL}${token}/getUpdates?limit=100&timeout=1`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.description || 'Failed to fetch updates');
+      }
+
+      const data = await response.json();
+      
+      if (!data.ok) {
+        throw new Error(data.description || 'Failed to fetch updates');
+      }
+
+      const updates = data.result || [];
+      
+      // Фильтруем обновления от нужного канала
+      const channelPosts: TelegramPost[] = [];
+      
+      for (const update of updates) {
+        if (update.channel_post) {
+          const post = update.channel_post;
+          const chat = post.chat;
+          
+          // Проверяем что это нужный канал
+          if (chat.username === username) {
+            channelPosts.push({
+              id: post.message_id,
+              text: post.text || post.caption || '',
+              date: new Date(post.date * 1000),
+              link: `https://t.me/${chat.username}/${post.message_id}`
+            });
+          }
+        }
+      }
+
+      // Сортируем по дате (новые первыми) и ограничиваем
+      const sortedPosts = channelPosts
+        .sort((a, b) => b.date.getTime() - a.date.getTime())
+        .slice(0, limit);
+
+      console.log(`[TelegramParser] Found ${sortedPosts.length} posts from @${username}`);
+      
+      if (sortedPosts.length === 0) {
+        console.warn(`[TelegramParser] No posts found. Make sure bot is subscribed to @${username}`);
+      }
+      
+      return sortedPosts;
+    } catch (error) {
+      console.error(`[TelegramParser] Failed to fetch posts from @${username}:`, error);
+      throw new Error(`Failed to fetch posts: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Парсинг канала - возвращает формат аналогичный RSS
+   */
+  public static async parse(channelUsername: string): Promise<{
+    title: string;
+    description?: string;
+    items: Array<{
+      title: string;
+      description?: string;
+      link: string;
+      pubDate: Date;
+      guid?: string;
+    }>;
+  }> {
+    const username = channelUsername.startsWith('@') ? channelUsername.slice(1) : channelUsername;
+    
+    try {
+      // Сначала пытаемся получить информацию о канале
+      let channelInfo: TelegramChannelInfo;
+      try {
+        channelInfo = await this.getChannelInfo(channelUsername);
+      } catch (error) {
+        // Если не удалось получить info, используем username как title
+        channelInfo = {
+          title: username,
+          username: username,
+          postsCount: 0
+        };
+      }
+
+      // Получаем посты
+      const posts = await this.fetchChannelPosts(channelUsername, 20);
+
+      // Если постов нет, возвращаем пустой результат с информацией о канале
+      if (posts.length === 0) {
+        return {
+          title: channelInfo.title,
+          description: channelInfo.description,
+          items: []
+        };
+      }
+
+      const items = posts.map((post) => {
+        // Берем первые 100 символов как title
+        const title = post.text.length > 100 
+          ? post.text.substring(0, 100) + '...'
+          : post.text || `Post #${post.id}`;
+        
+        return {
+          title,
+          description: post.text,
+          link: post.link || `https://t.me/${username}/${post.id}`,
+          pubDate: post.date,
+          guid: `telegram_${username}_${post.id}`
+        };
+      });
+
+      return {
+        title: channelInfo.title,
+        description: channelInfo.description,
+        items
+      };
+    } catch (error) {
+      console.error(`[TelegramParser] Failed to parse channel @${username}:`, error);
+      throw error;
+    }
+  }
+}

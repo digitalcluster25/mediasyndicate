@@ -1,5 +1,6 @@
 import { prisma } from '../prisma';
 import { RSSParser } from './RSSParser';
+import { TelegramParser } from './TelegramParser';
 
 export class ImportService {
   public static async importFromSource(sourceId: string): Promise<{ imported: number; errors: number }> {
@@ -7,18 +8,38 @@ export class ImportService {
       where: { id: sourceId },
     });
 
-    if (!source || !source.isActive || source.type !== 'RSS') {
+    if (!source || !source.isActive) {
       return { imported: 0, errors: 0 };
     }
 
-    console.log(`[ImportService] Importing from source: ${source.name} (${source.url})`);
+    console.log(`[ImportService] Importing from source: ${source.name} (${source.url}, type: ${source.type})`);
 
     let imported = 0;
     let errors = 0;
 
     try {
-      const feed = await RSSParser.parse(source.url);
-      console.log(`[ImportService] RSS feed returned ${feed.items.length} items from ${source.name}`);
+      let feed: {
+        title?: string;
+        items: Array<{
+          title: string;
+          description?: string;
+          link: string;
+          pubDate?: Date;
+          guid?: string;
+        }>;
+      };
+
+      if (source.type === 'RSS') {
+        feed = await RSSParser.parse(source.url);
+        console.log(`[ImportService] RSS feed returned ${feed.items.length} items from ${source.name}`);
+      } else if (source.type === 'TELEGRAM') {
+        // Для Telegram url содержит username канала (например, @uniannet)
+        feed = await TelegramParser.parse(source.url);
+        console.log(`[ImportService] Telegram channel returned ${feed.items.length} items from ${source.name}`);
+      } else {
+        console.warn(`[ImportService] Unknown source type: ${source.type}`);
+        return { imported: 0, errors: 0 };
+      }
       
       for (const item of feed.items) {
         if (!item.link) {
@@ -69,7 +90,7 @@ export class ImportService {
     let totalErrors = 0;
 
     for (const source of sources) {
-      if (source.type === 'RSS') {
+      if (source.type === 'RSS' || source.type === 'TELEGRAM') {
         const result = await this.importFromSource(source.id);
         totalImported += result.imported;
         totalErrors += result.errors;
