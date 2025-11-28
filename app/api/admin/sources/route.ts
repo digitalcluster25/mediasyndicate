@@ -62,8 +62,22 @@ export async function POST(request: Request) {
   const schema = z.object({
     name: z.string().min(3).max(100),
     type: z.enum(['RSS', 'TELEGRAM']),
-    url: z.string().url().optional(),
+    url: z.string().min(1), // Обязательное поле, но валидация URL зависит от типа
     isActive: z.boolean().default(true)
+  }).refine((data) => {
+    if (data.type === 'RSS') {
+      try {
+        new URL(data.url);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    // Для Telegram принимаем @username или https://t.me/username
+    return data.url.startsWith('@') || data.url.startsWith('https://t.me/') || data.url.length > 0;
+  }, {
+    message: 'Для RSS нужен валидный URL, для Telegram - @username или https://t.me/username',
+    path: ['url']
   });
 
   const validation = schema.safeParse(body);
