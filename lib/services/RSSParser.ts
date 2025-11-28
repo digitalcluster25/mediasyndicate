@@ -1,6 +1,14 @@
 import Parser from 'rss-parser';
 
-const parser = new Parser();
+const parser = new Parser({
+  customFields: {
+    item: []
+  },
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  },
+  timeout: 30000
+});
 
 export interface RSSItem {
   title: string;
