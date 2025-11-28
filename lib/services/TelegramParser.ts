@@ -136,9 +136,28 @@ export class TelegramParser {
           }
         }
         
-        // Forwards: ищем в tgme_widget_message_forwarded_from или кнопке пересылки
-        const forwardsMatch = messageHtml.match(/<a[^>]*class="tgme_widget_message_forwarded_from[^"]*"[^>]*>|forwarded from/i);
-        let forwards = forwardsMatch ? 1 : 0; // Если есть пересылка, считаем как минимум 1
+        // Forwards: ищем количество пересылок в кнопке
+        // Telegram показывает "Forwarded from" или количество в кнопке пересылки
+        let forwards = 0;
+        const forwardedMatch = messageHtml.match(/<a[^>]*class="tgme_widget_message_forwarded_from[^"]*"[^>]*>/i);
+        if (forwardedMatch) {
+          // Если есть пересылка, ищем количество
+          const forwardCountMatch = messageHtml.match(/<span[^>]*class="tgme_widget_message_forward[^"]*"[^>]*>([\s\S]*?)<\/span>/);
+          if (forwardCountMatch) {
+            const forwardText = forwardCountMatch[1].replace(/<[^>]+>/g, '').trim();
+            const forwardNum = forwardText.match(/([\d.]+)/);
+            if (forwardNum) {
+              let num = parseFloat(forwardNum[1]);
+              if (forwardText.toLowerCase().includes('k')) num *= 1000;
+              if (forwardText.toLowerCase().includes('m')) num *= 1000000;
+              forwards = Math.floor(num);
+            } else {
+              forwards = 1; // Минимум 1 если есть пересылка
+            }
+          } else {
+            forwards = 1; // Минимум 1 если есть пересылка
+          }
+        }
         
         // Reactions: ищем эмодзи реакции
         const reactionsMatch = messageHtml.match(/<span[^>]*class="tgme_widget_message_reaction[^"]*"[^>]*>([\s\S]*?)<\/span>/g);
