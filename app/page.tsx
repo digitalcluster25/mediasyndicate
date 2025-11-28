@@ -13,14 +13,32 @@ export default async function Home() {
     },
   });
 
-  // Получаем популярные статьи по рейтингу
-  const popularArticles = await prisma.article.findMany({
-    orderBy: { rating: 'desc' },
-    take: 10,
-    include: {
-      source: true,
-    },
-  });
+  // Получаем популярные статьи по рейтингу (если поле rating существует)
+  // Иначе используем publishedAt как fallback
+  let popularArticles: any[] = [];
+  try {
+    popularArticles = await prisma.article.findMany({
+      orderBy: { rating: 'desc' },
+      take: 10,
+      include: {
+        source: true,
+      },
+    });
+  } catch (error: any) {
+    // Если поле rating не существует, используем publishedAt
+    if (error?.code === 'P2022' || error?.message?.includes('does not exist')) {
+      console.warn('[Homepage] Rating field does not exist, using publishedAt for sorting');
+      popularArticles = await prisma.article.findMany({
+        orderBy: { publishedAt: 'desc' },
+        take: 10,
+        include: {
+          source: true,
+        },
+      });
+    } else {
+      throw error;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-8">
