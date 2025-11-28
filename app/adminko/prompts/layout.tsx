@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-export default function SourcesLayout({
+export default function PromptsLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -25,7 +25,7 @@ export default function SourcesLayout({
                 </Link>
                 <Link 
                   href="/adminko/prompts" 
-                  className="text-sm text-gray-600 hover:text-gray-900"
+                  className="text-sm text-gray-900 font-medium"
                 >
                   Промпты
                 </Link>
@@ -44,3 +44,4 @@ export default function SourcesLayout({
     </div>
   );
 }
+
