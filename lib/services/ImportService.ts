@@ -5,6 +5,36 @@ import { RatingService } from './RatingService';
 let TelegramParser: typeof import('./TelegramParser').TelegramParser | null = null;
 
 export class ImportService {
+  // Кэш для проверки наличия полей метрик
+  private static metricsFieldsExist: boolean | null = null;
+
+  /**
+   * Проверяет наличие полей метрик в таблице Article
+   * Используется для обратной совместимости если миграция не применена
+   */
+  private static async checkMetricsFieldsExist(): Promise<boolean> {
+    if (this.metricsFieldsExist !== null) {
+      return this.metricsFieldsExist;
+    }
+
+    try {
+      // Пробуем выполнить запрос с полями метрик
+      await prisma.$queryRaw`SELECT views, forwards, reactions, replies, rating FROM "Article" LIMIT 1`;
+      this.metricsFieldsExist = true;
+      return true;
+    } catch (error: any) {
+      // Если ошибка связана с отсутствием колонок, поля не существуют
+      if (error?.code === 'P2022' || error?.message?.includes('does not exist')) {
+        console.warn('[ImportService] Metrics fields do not exist in database. Migration may not be applied.');
+        this.metricsFieldsExist = false;
+        return false;
+      }
+      // Другие ошибки - предполагаем что поля есть
+      this.metricsFieldsExist = true;
+      return true;
+    }
+  }
+
   public static async importFromSource(sourceId: string): Promise<{ imported: number; errors: number }> {
     const source = await prisma.source.findUnique({
       where: { id: sourceId },
@@ -72,37 +102,58 @@ export class ImportService {
           const metrics = (item as any).metrics || {};
           const publishedAt = item.pubDate || new Date();
           
+          // Базовые данные для статьи
+          const baseData = {
+            title: item.title,
+            content: item.description || '',
+            publishedAt: publishedAt,
+          };
+          
+          // Проверяем наличие полей метрик в схеме (для обратной совместимости)
+          // Если миграция не применена, не используем метрики
+          const hasMetricsFields = await this.checkMetricsFieldsExist();
+          
+          const updateData: any = { ...baseData };
+          const createData: any = {
+            ...baseData,
+            url: item.link,
+            sourceId: source.id,
+          };
+          
+          // Добавляем метрики только если поля существуют
+          if (hasMetricsFields) {
+            if (metrics.views !== undefined) {
+              updateData.views = metrics.views;
+              createData.views = metrics.views || 0;
+            }
+            if (metrics.forwards !== undefined) {
+              updateData.forwards = metrics.forwards;
+              createData.forwards = metrics.forwards || 0;
+            }
+            if (metrics.reactions !== undefined) {
+              updateData.reactions = metrics.reactions;
+              createData.reactions = metrics.reactions || 0;
+            }
+            if (metrics.replies !== undefined) {
+              updateData.replies = metrics.replies;
+              createData.replies = metrics.replies || 0;
+            }
+          }
+          
           const article = await prisma.article.upsert({
             where: { url: item.link },
-            update: {
-              title: item.title,
-              content: item.description || '',
-              publishedAt: publishedAt,
-              // Обновляем метрики только если они есть (Telegram)
-              ...(metrics.views !== undefined && { views: metrics.views }),
-              ...(metrics.forwards !== undefined && { forwards: metrics.forwards }),
-              ...(metrics.reactions !== undefined && { reactions: metrics.reactions }),
-              ...(metrics.replies !== undefined && { replies: metrics.replies }),
-            },
-            create: {
-              title: item.title,
-              url: item.link,
-              content: item.description || '',
-              publishedAt: publishedAt,
-              sourceId: source.id,
-              views: metrics.views || 0,
-              forwards: metrics.forwards || 0,
-              reactions: metrics.reactions || 0,
-              replies: metrics.replies || 0,
-            },
+            update: updateData,
+            create: createData,
           });
           
-          // Пересчитываем рейтинг после импорта
-          try {
-            await RatingService.updateArticleRating(article.id);
-          } catch (ratingError) {
-            console.warn(`[ImportService] Failed to update rating for article ${article.id}:`, ratingError);
-            // Не считаем это критической ошибкой
+          // Пересчитываем рейтинг после импорта (только если поля метрик существуют)
+          if (hasMetricsFields) {
+            try {
+              await RatingService.updateArticleRating(article.id);
+            } catch (ratingError) {
+              console.warn(`[ImportService] Failed to update rating for article ${article.id}:`, ratingError);
+              // Не считаем это критической ошибкой
+            }
           }
           
           imported++;
