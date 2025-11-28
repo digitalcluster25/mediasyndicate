@@ -1,15 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clearSessionCookie } from '@/lib/auth/session';
 
-export async function GET() {
-  await clearSessionCookie();
-  
-  // Редирект на логин
-  return NextResponse.redirect(
-    new URL('/adminko', process.env.NEXT_PUBLIC_URL || 'http://localhost:3000')
-  );
-}
-
+// Убрать GET метод - только POST
 export async function POST() {
   await clearSessionCookie();
   

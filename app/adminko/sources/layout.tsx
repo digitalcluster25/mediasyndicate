@@ -1,16 +1,56 @@
-import { getSession } from '@/lib/auth/session';
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-export default async function SourcesLayout({
+export default function SourcesLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession();
+  const router = useRouter();
+  const [username, setUsername] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
-  if (!session) {
-    redirect('/adminko?from=/adminko/sources');
+  useEffect(() => {
+    // Проверить сессию
+    fetch('/api/admin/auth/check', {
+      credentials: 'include'
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated) {
+          setUsername(data.username);
+        } else {
+          router.push('/adminko?from=/adminko/sources');
+        }
+      })
+      .catch(() => {
+        router.push('/adminko?from=/adminko/sources');
+      })
+      .finally(() => setLoading(false));
+  }, [router]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      router.push('/adminko');
+      router.refresh();
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    );
   }
 
   return (
@@ -24,13 +64,13 @@ export default async function SourcesLayout({
               </Link>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">{session.username}</span>
-              <Link
-                href="/api/admin/auth/logout"
+              <span className="text-sm text-gray-600">{username}</span>
+              <button
+                onClick={handleLogout}
                 className="text-sm text-red-600 hover:text-red-800"
               >
                 Выйти
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -42,4 +82,3 @@ export default async function SourcesLayout({
     </div>
   );
 }
-
