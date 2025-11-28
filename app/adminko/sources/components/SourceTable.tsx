@@ -30,15 +30,20 @@ export function SourceTable() {
   const [importingId, setImportingId] = useState<string | null>(null);
 
   // Fetch sources
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, isError } = useQuery({
     queryKey: ['sources'],
     queryFn: async () => {
       const res = await fetch('/api/admin/sources', {
         credentials: 'include'
       });
-      if (!res.ok) throw new Error('Failed to fetch sources');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Failed to fetch sources' }));
+        throw new Error(errorData.error || `HTTP ${res.status}: Failed to fetch sources`);
+      }
       return res.json();
-    }
+    },
+    retry: 1,
+    retryDelay: 1000
   });
 
   // Manual import mutation
@@ -91,6 +96,33 @@ export function SourceTable() {
   });
 
   if (isLoading) return <div>Loading...</div>;
+
+  if (isError) {
+    return (
+      <div className="rounded-md border p-4 bg-red-50">
+        <p className="text-red-800 font-semibold">Ошибка загрузки источников</p>
+        <p className="text-red-600 text-sm mt-1">
+          {error instanceof Error ? error.message : 'Неизвестная ошибка'}
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-3"
+          onClick={() => queryClient.invalidateQueries({ queryKey: ['sources'] })}
+        >
+          Повторить
+        </Button>
+      </div>
+    );
+  }
+
+  if (!data || !data.sources || data.sources.length === 0) {
+    return (
+      <div className="rounded-md border p-4 text-center text-gray-500">
+        Нет источников. Добавьте первый источник.
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-md border">
