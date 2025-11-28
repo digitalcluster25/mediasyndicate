@@ -56,6 +56,12 @@ export class TelegramParser {
       link: string;
       pubDate: Date;
       guid?: string;
+      metrics?: {
+        views: number;
+        forwards: number;
+        reactions: number;
+        replies: number;
+      };
     }>;
   }> {
     // Нормализуем username (убираем @ и префиксы)
@@ -87,6 +93,10 @@ export class TelegramParser {
         text: string;
         date: Date;
         link: string;
+        views: number;
+        forwards: number;
+        reactions: number;
+        replies: number;
       }> = [];
       
       // Ищем все сообщения в HTML
@@ -110,12 +120,59 @@ export class TelegramParser {
         const dateMatch = messageHtml.match(/<time[^>]*datetime="([^"]+)"[^>]*>/);
         const date = dateMatch ? new Date(dateMatch[1]) : new Date();
         
+        // Извлекаем метрики
+        // Views: ищем в tgme_widget_message_views
+        const viewsMatch = messageHtml.match(/<span[^>]*class="tgme_widget_message_views[^"]*"[^>]*>([\s\S]*?)<\/span>/);
+        let views = 0;
+        if (viewsMatch) {
+          const viewsText = viewsMatch[1].replace(/<[^>]+>/g, '').trim();
+          // Парсим числа с K, M суффиксами (например, "1.2K" -> 1200)
+          const viewsNum = viewsText.match(/([\d.]+)/);
+          if (viewsNum) {
+            let num = parseFloat(viewsNum[1]);
+            if (viewsText.toLowerCase().includes('k')) num *= 1000;
+            if (viewsText.toLowerCase().includes('m')) num *= 1000000;
+            views = Math.floor(num);
+          }
+        }
+        
+        // Forwards: ищем в tgme_widget_message_forwarded_from или кнопке пересылки
+        const forwardsMatch = messageHtml.match(/<a[^>]*class="tgme_widget_message_forwarded_from[^"]*"[^>]*>|forwarded from/i);
+        let forwards = forwardsMatch ? 1 : 0; // Если есть пересылка, считаем как минимум 1
+        
+        // Reactions: ищем эмодзи реакции
+        const reactionsMatch = messageHtml.match(/<span[^>]*class="tgme_widget_message_reaction[^"]*"[^>]*>([\s\S]*?)<\/span>/g);
+        let reactions = 0;
+        if (reactionsMatch) {
+          reactionsMatch.forEach((reaction) => {
+            const countMatch = reaction.match(/(\d+)/);
+            if (countMatch) {
+              reactions += parseInt(countMatch[1], 10);
+            }
+          });
+        }
+        
+        // Replies: ищем в tgme_widget_message_reply
+        const repliesMatch = messageHtml.match(/<a[^>]*class="tgme_widget_message_reply[^"]*"[^>]*>([\s\S]*?)<\/a>/);
+        let replies = 0;
+        if (repliesMatch) {
+          const repliesText = repliesMatch[1].replace(/<[^>]+>/g, '').trim();
+          const repliesNum = repliesText.match(/(\d+)/);
+          if (repliesNum) {
+            replies = parseInt(repliesNum[1], 10);
+          }
+        }
+        
         if (text && text.length > 0) {
           posts.push({
             id: postId,
             text: text,
             date: date,
-            link: `https://t.me/${username}/${postId}`
+            link: `https://t.me/${username}/${postId}`,
+            views: views,
+            forwards: forwards,
+            reactions: reactions,
+            replies: replies
           });
         }
         
@@ -133,7 +190,7 @@ export class TelegramParser {
       const titleMatch = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]+)"/);
       const title = titleMatch ? titleMatch[1] : `Telegram: ${username}`;
       
-      // Преобразуем в формат RSS
+      // Преобразуем в формат RSS с метриками
       const items = sortedPosts.map((post) => {
         const titleText = post.text.length > 100 
           ? post.text.substring(0, 100) + '...'
@@ -144,7 +201,14 @@ export class TelegramParser {
           description: post.text,
           link: post.link,
           pubDate: post.date,
-          guid: `telegram_${username}_${post.id}`
+          guid: `telegram_${username}_${post.id}`,
+          // Добавляем метрики в guid для передачи в ImportService
+          metrics: {
+            views: post.views,
+            forwards: post.forwards,
+            reactions: post.reactions,
+            replies: post.replies
+          }
         };
       });
       

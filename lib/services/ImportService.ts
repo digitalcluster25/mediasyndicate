@@ -27,6 +27,12 @@ export class ImportService {
           link: string;
           pubDate?: Date;
           guid?: string;
+          metrics?: {
+            views: number;
+            forwards: number;
+            reactions: number;
+            replies: number;
+          };
         }>;
       };
 
@@ -61,12 +67,20 @@ export class ImportService {
         }
 
         try {
+          // Сохраняем метрики если они есть (для Telegram)
+          const metrics = (item as any).metrics || {};
+          
           await prisma.article.upsert({
             where: { url: item.link },
             update: {
               title: item.title,
               content: item.description || '',
               publishedAt: item.pubDate || new Date(),
+              // Обновляем метрики только если они есть (Telegram)
+              ...(metrics.views !== undefined && { views: metrics.views }),
+              ...(metrics.forwards !== undefined && { forwards: metrics.forwards }),
+              ...(metrics.reactions !== undefined && { reactions: metrics.reactions }),
+              ...(metrics.replies !== undefined && { replies: metrics.replies }),
             },
             create: {
               title: item.title,
@@ -74,6 +88,10 @@ export class ImportService {
               content: item.description || '',
               publishedAt: item.pubDate || new Date(),
               sourceId: source.id,
+              views: metrics.views || 0,
+              forwards: metrics.forwards || 0,
+              reactions: metrics.reactions || 0,
+              replies: metrics.replies || 0,
             },
           });
           imported++;
