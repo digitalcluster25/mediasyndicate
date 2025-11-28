@@ -1,5 +1,6 @@
 import { prisma } from '../prisma';
 import { RSSParser } from './RSSParser';
+import { RatingService } from './RatingService';
 // Lazy import для TelegramParser - загружается только при необходимости
 let TelegramParser: typeof import('./TelegramParser').TelegramParser | null = null;
 
@@ -69,13 +70,14 @@ export class ImportService {
         try {
           // Сохраняем метрики если они есть (для Telegram)
           const metrics = (item as any).metrics || {};
+          const publishedAt = item.pubDate || new Date();
           
-          await prisma.article.upsert({
+          const article = await prisma.article.upsert({
             where: { url: item.link },
             update: {
               title: item.title,
               content: item.description || '',
-              publishedAt: item.pubDate || new Date(),
+              publishedAt: publishedAt,
               // Обновляем метрики только если они есть (Telegram)
               ...(metrics.views !== undefined && { views: metrics.views }),
               ...(metrics.forwards !== undefined && { forwards: metrics.forwards }),
@@ -86,7 +88,7 @@ export class ImportService {
               title: item.title,
               url: item.link,
               content: item.description || '',
-              publishedAt: item.pubDate || new Date(),
+              publishedAt: publishedAt,
               sourceId: source.id,
               views: metrics.views || 0,
               forwards: metrics.forwards || 0,
@@ -94,6 +96,15 @@ export class ImportService {
               replies: metrics.replies || 0,
             },
           });
+          
+          // Пересчитываем рейтинг после импорта
+          try {
+            await RatingService.updateArticleRating(article.id);
+          } catch (ratingError) {
+            console.warn(`[ImportService] Failed to update rating for article ${article.id}:`, ratingError);
+            // Не считаем это критической ошибкой
+          }
+          
           imported++;
         } catch (error) {
           console.error(`[ImportService] Failed to import article: ${item.link}`, error);
