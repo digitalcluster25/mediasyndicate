@@ -341,25 +341,31 @@ export class TelegramParser {
 
       // Получаем посты - сначала пробуем Bot API, потом Web Scraping
       let posts: TelegramPost[] = [];
+      let botApiWorked = false;
       
-      try {
-        // Пробуем Bot API (если токен есть)
-        if (this.isAvailable()) {
+      // Пробуем Bot API (если токен есть)
+      if (this.isAvailable()) {
+        try {
           posts = await this.fetchChannelPosts(normalized, 20);
           console.log(`[TelegramParser] Bot API returned ${posts.length} posts`);
+          botApiWorked = true;
+        } catch (error) {
+          console.warn(`[TelegramParser] Bot API failed:`, error instanceof Error ? error.message : String(error));
+          console.log(`[TelegramParser] Trying web scraping as fallback...`);
         }
-      } catch (error) {
-        console.warn(`[TelegramParser] Bot API failed, trying web scraping:`, error);
+      } else {
+        console.log(`[TelegramParser] Bot API not available (no token), using web scraping...`);
       }
       
-      // Если постов нет, пробуем Web Scraping
+      // Если постов нет (Bot API не сработал или вернул 0), пробуем Web Scraping
       if (posts.length === 0) {
         try {
-          console.log(`[TelegramParser] Trying web scraping for ${normalized}...`);
+          console.log(`[TelegramParser] Fetching posts via web scraping for ${normalized}...`);
           posts = await this.fetchChannelPostsViaWebScraping(normalized, 20);
           console.log(`[TelegramParser] Web scraping returned ${posts.length} posts`);
         } catch (error) {
-          console.error(`[TelegramParser] Web scraping also failed:`, error);
+          console.error(`[TelegramParser] Web scraping failed:`, error instanceof Error ? error.message : String(error));
+          // Не выбрасываем ошибку, просто возвращаем пустой результат
         }
       }
 
