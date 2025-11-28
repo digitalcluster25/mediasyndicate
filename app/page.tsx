@@ -55,10 +55,10 @@ export default async function Home() {
                         <ExternalLink className="h-4 w-4 text-slate-400" />
                       </a>
                     </h3>
-                    {article.rating > 0 && (
+                    {(article as any).rating > 0 && (
                       <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-sm font-medium">
                         <TrendingUp className="h-3 w-3" />
-                        {article.rating.toFixed(1)}
+                        {((article as any).rating as number).toFixed(1)}
                       </div>
                     )}
                   </div>
@@ -75,30 +75,30 @@ export default async function Home() {
                         day: 'numeric'
                       })}
                     </div>
-                    {(article.views > 0 || article.forwards > 0 || article.reactions > 0 || article.replies > 0) && (
+                    {((article as any).views > 0 || (article as any).forwards > 0 || (article as any).reactions > 0 || (article as any).replies > 0) && (
                       <div className="flex items-center gap-3 ml-auto">
-                        {article.views > 0 && (
+                        {(article as any).views > 0 && (
                           <div className="flex items-center gap-1" title="Просмотры">
                             <Eye className="h-3 w-3" />
-                            <span>{article.views}</span>
+                            <span>{(article as any).views}</span>
                           </div>
                         )}
-                        {article.forwards > 0 && (
+                        {(article as any).forwards > 0 && (
                           <div className="flex items-center gap-1" title="Пересылки">
                             <Share2 className="h-3 w-3" />
-                            <span>{article.forwards}</span>
+                            <span>{(article as any).forwards}</span>
                           </div>
                         )}
-                        {article.reactions > 0 && (
+                        {(article as any).reactions > 0 && (
                           <div className="flex items-center gap-1" title="Реакции">
                             <Heart className="h-3 w-3" />
-                            <span>{article.reactions}</span>
+                            <span>{(article as any).reactions}</span>
                           </div>
                         )}
-                        {article.replies > 0 && (
+                        {(article as any).replies > 0 && (
                           <div className="flex items-center gap-1" title="Ответы">
                             <MessageCircle className="h-3 w-3" />
-                            <span>{article.replies}</span>
+                            <span>{(article as any).replies}</span>
                           </div>
                         )}
                       </div>
