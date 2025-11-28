@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth/session';
+// import { getSession } from '@/lib/auth/session'; // ЗАКОММЕНТИРОВАНО
 import { z } from 'zod';
 
 export async function GET() {
-  // Проверка сессии
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  // АВТОРИЗАЦИЯ ОТКЛЮЧЕНА ДЛЯ РАЗРАБОТКИ
+  // const session = await getSession();
+  // if (!session) {
+  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // }
 
   // Получить источники с подсчетом статей
   const sources = await prisma.source.findMany({
@@ -50,10 +50,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  // АВТОРИЗАЦИЯ ОТКЛЮЧЕНА ДЛЯ РАЗРАБОТКИ
+  // const session = await getSession();
+  // if (!session) {
+  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // }
 
   const body = await request.json();
   

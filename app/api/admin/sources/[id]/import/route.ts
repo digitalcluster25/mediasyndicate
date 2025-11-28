@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/session';
+// import { getSession } from '@/lib/auth/session'; // ЗАКОММЕНТИРОВАНО
 import { ImportService } from '@/lib/services/ImportService';
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  // АВТОРИЗАЦИЯ ОТКЛЮЧЕНА ДЛЯ РАЗРАБОТКИ
+  // const session = await getSession();
+  // if (!session) {
+  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // }
 
   const { id } = await params;
   const startTime = Date.now();

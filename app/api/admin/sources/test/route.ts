@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/session';
+// import { getSession } from '@/lib/auth/session'; // ЗАКОММЕНТИРОВАНО
 import { RSSParser } from '@/lib/services/RSSParser';
 import { z } from 'zod';
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  // АВТОРИЗАЦИЯ ОТКЛЮЧЕНА ДЛЯ РАЗРАБОТКИ
+  // const session = await getSession();
+  // if (!session) {
+  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // }
 
   const body = await request.json();
   
