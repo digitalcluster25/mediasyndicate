@@ -46,6 +46,45 @@ export class TelegramParser {
   }
 
   /**
+   * Нормализация username канала
+   * Преобразует различные форматы в стандартный @username
+   * 
+   * Примеры:
+   * - "https://t.me/uniannet" -> "@uniannet"
+   * - "https://t.me/uniannet/123" -> "@uniannet"
+   * - "@uniannet" -> "@uniannet"
+   * - "uniannet" -> "@uniannet"
+   */
+  private static normalizeChannelUsername(input: string): string {
+    let username = input.trim();
+    
+    // Убрать префикс https://t.me/ или http://t.me/
+    if (username.startsWith('https://t.me/') || username.startsWith('http://t.me/')) {
+      username = username.replace(/^https?:\/\/t\.me\//, '');
+      // Убрать путь после username (например, /123)
+      username = username.split('/')[0];
+    }
+    
+    // Убрать префикс t.me/ если есть
+    if (username.startsWith('t.me/')) {
+      username = username.replace(/^t\.me\//, '');
+      username = username.split('/')[0];
+    }
+    
+    // Убрать @ если уже есть
+    if (username.startsWith('@')) {
+      username = username.slice(1);
+    }
+    
+    // Добавить @ в начало
+    const normalized = `@${username}`;
+    
+    console.log(`[TelegramParser] normalizeChannelUsername: "${input}" -> "${normalized}"`);
+    
+    return normalized;
+  }
+
+  /**
    * Получить информацию о канале
    */
   public static async getChannelInfo(channelUsername: string): Promise<TelegramChannelInfo> {
@@ -54,7 +93,8 @@ export class TelegramParser {
     }
 
     const token = this.getBotToken()!;
-    const username = channelUsername.startsWith('@') ? channelUsername.slice(1) : channelUsername;
+    const normalized = this.normalizeChannelUsername(channelUsername);
+    const username = normalized.slice(1); // Убрать @ для API
     
     try {
       // Получить информацию о канале через getChat
@@ -99,9 +139,10 @@ export class TelegramParser {
     }
 
     const token = this.getBotToken()!;
-    const username = channelUsername.startsWith('@') ? channelUsername.slice(1) : channelUsername;
+    const normalized = this.normalizeChannelUsername(channelUsername);
+    const username = normalized.slice(1); // Убрать @ для API
     
-    console.log(`[TelegramParser] Fetching posts from @${username}, limit: ${limit}`);
+    console.log(`[TelegramParser] Fetching posts from ${normalized}, limit: ${limit}`);
 
     try {
       // Получить последние обновления от бота
@@ -173,13 +214,17 @@ export class TelegramParser {
       guid?: string;
     }>;
   }> {
-    const username = channelUsername.startsWith('@') ? channelUsername.slice(1) : channelUsername;
+    // Нормализуем username перед использованием
+    const normalized = this.normalizeChannelUsername(channelUsername);
+    const username = normalized.slice(1); // Убрать @ для внутреннего использования
+    
+    console.log(`[TelegramParser] parse() called with: "${channelUsername}" -> normalized: "${normalized}"`);
     
     try {
       // Сначала пытаемся получить информацию о канале
       let channelInfo: TelegramChannelInfo;
       try {
-        channelInfo = await this.getChannelInfo(channelUsername);
+        channelInfo = await this.getChannelInfo(normalized);
       } catch (error) {
         // Если не удалось получить info, используем username как title
         channelInfo = {
@@ -190,7 +235,7 @@ export class TelegramParser {
       }
 
       // Получаем посты
-      const posts = await this.fetchChannelPosts(channelUsername, 20);
+      const posts = await this.fetchChannelPosts(normalized, 20);
 
       // Если постов нет, возвращаем пустой результат с информацией о канале
       if (posts.length === 0) {
@@ -222,7 +267,7 @@ export class TelegramParser {
         items
       };
     } catch (error) {
-      console.error(`[TelegramParser] Failed to parse channel @${username}:`, error);
+      console.error(`[TelegramParser] Failed to parse channel ${normalized}:`, error);
       throw error;
     }
   }

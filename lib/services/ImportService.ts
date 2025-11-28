@@ -34,14 +34,16 @@ export class ImportService {
         feed = await RSSParser.parse(source.url);
         console.log(`[ImportService] RSS feed returned ${feed.items.length} items from ${source.name}`);
       } else if (source.type === 'TELEGRAM') {
-        // Для Telegram url содержит username канала (например, @uniannet)
+        // Для Telegram url содержит username канала (например, @uniannet или https://t.me/uniannet)
+        // TelegramParser.parse() сам нормализует URL через normalizeChannelUsername()
         // Lazy load TelegramParser
         try {
           if (!TelegramParser) {
             const telegramModule = await import('./TelegramParser');
             TelegramParser = telegramModule.TelegramParser;
           }
-          feed = await TelegramParser.parse(source.url);
+          console.log(`[ImportService] Parsing Telegram source: ${source.name}, URL: "${source.url}"`);
+          feed = await TelegramParser.parse(source.url || '');
           console.log(`[ImportService] Telegram channel returned ${feed.items.length} items from ${source.name}`);
         } catch (error) {
           console.error(`[ImportService] Telegram parsing failed:`, error);

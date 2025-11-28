@@ -39,17 +39,11 @@ export async function POST(request: Request) {
     let feed: { items: any[]; title?: string };
     
     if (sourceType === 'TELEGRAM') {
-      // Для Telegram извлекаем username из URL
-      let username = url;
-      if (url.startsWith('https://t.me/')) {
-        username = '@' + url.replace('https://t.me/', '').split('/')[0];
-      } else if (!url.startsWith('@')) {
-        username = '@' + url;
-      }
-      
       // Lazy load TelegramParser
       const { TelegramParser } = await import('@/lib/services/TelegramParser');
-      feed = await TelegramParser.parse(username);
+      // TelegramParser.parse() сам нормализует URL через normalizeChannelUsername()
+      console.log(`[RSS Test] Testing Telegram source with URL: "${url}"`);
+      feed = await TelegramParser.parse(url);
     } else {
       // RSS парсинг
       feed = await RSSParser.parse(url);
