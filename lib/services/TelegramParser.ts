@@ -183,7 +183,7 @@ export class TelegramParser {
       // Telegram использует структуру с data-post атрибутами
       if ($) {
         // Используем cheerio если доступен
-        $('.tgme_widget_message').each((index, element) => {
+        $('.tgme_widget_message').each((index: number, element: any) => {
           if (posts.length >= limit) return false;
           
           const $msg = $(element);
