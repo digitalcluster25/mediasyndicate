@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 // import { getSession } from '@/lib/auth/session'; // ЗАКОММЕНТИРОВАНО
 import { RSSParser } from '@/lib/services/RSSParser';
-import { TelegramParser } from '@/lib/services/TelegramParser';
+// Lazy import для TelegramParser
 import { z } from 'zod';
 
 export async function POST(request: Request) {
@@ -47,6 +47,8 @@ export async function POST(request: Request) {
         username = '@' + url;
       }
       
+      // Lazy load TelegramParser
+      const { TelegramParser } = await import('@/lib/services/TelegramParser');
       feed = await TelegramParser.parse(username);
     } else {
       // RSS парсинг

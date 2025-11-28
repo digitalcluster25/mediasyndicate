@@ -1,6 +1,7 @@
 import { prisma } from '../prisma';
 import { RSSParser } from './RSSParser';
-import { TelegramParser } from './TelegramParser';
+// Lazy import для TelegramParser - загружается только при необходимости
+let TelegramParser: typeof import('./TelegramParser').TelegramParser | null = null;
 
 export class ImportService {
   public static async importFromSource(sourceId: string): Promise<{ imported: number; errors: number }> {
@@ -34,6 +35,11 @@ export class ImportService {
         console.log(`[ImportService] RSS feed returned ${feed.items.length} items from ${source.name}`);
       } else if (source.type === 'TELEGRAM') {
         // Для Telegram url содержит username канала (например, @uniannet)
+        // Lazy load TelegramParser
+        if (!TelegramParser) {
+          const telegramModule = await import('./TelegramParser');
+          TelegramParser = telegramModule.TelegramParser;
+        }
         feed = await TelegramParser.parse(source.url);
         console.log(`[ImportService] Telegram channel returned ${feed.items.length} items from ${source.name}`);
       } else {
