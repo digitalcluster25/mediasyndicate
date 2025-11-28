@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { Save, X } from 'lucide-react';
 
 const schema = z.object({
   key: z.string().min(1, 'Обязательное поле').regex(/^[a-z0-9_]+$/, 'Только строчные буквы, цифры и подчеркивания'),
@@ -203,19 +204,23 @@ export function PromptForm({ open, onOpenChange, prompt, onSuccess }: Props) {
             <Button
               type="button"
               variant="outline"
+              className="border-slate-200 hover:bg-slate-100"
               onClick={() => {
                 onOpenChange(false);
                 form.reset();
               }}
             >
+              <X className="h-4 w-4 mr-2" />
               Отмена
             </Button>
             <Button
               type="submit"
               disabled={saveMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
             >
+              <Save className="h-4 w-4 mr-2" />
               {saveMutation.isPending 
-                ? '⏳ Сохранение...' 
+                ? 'Сохранение...' 
                 : isEditing 
                   ? 'Сохранить изменения' 
                   : 'Создать промпт'}

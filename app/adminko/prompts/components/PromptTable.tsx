@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { Edit, Trash2, CheckCircle, XCircle, Tag, Calendar } from 'lucide-react';
 
 interface Prompt {
   id: string;
@@ -93,13 +94,19 @@ export function PromptTable({ onEdit }: PromptTableProps) {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Загрузка промптов...</div>;
+    return (
+      <div className="rounded-md border border-slate-200 bg-white p-4 text-center">
+        <p className="text-slate-600">Загрузка промптов...</p>
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="text-center py-8 text-red-600">
-        Ошибка загрузки: {error instanceof Error ? error.message : 'Unknown error'}
+      <div className="rounded-md border border-slate-200 bg-white p-4 text-center">
+        <p className="text-red-600">
+          Ошибка загрузки: {error instanceof Error ? error.message : 'Unknown error'}
+        </p>
       </div>
     );
   }
@@ -108,62 +115,81 @@ export function PromptTable({ onEdit }: PromptTableProps) {
 
   if (prompts.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="rounded-md border border-slate-200 bg-white p-4 text-center text-slate-600">
         Промпты не найдены. Создайте первый промпт.
       </div>
     );
   }
 
   return (
-    <div className="border rounded-lg">
+    <div className="rounded-md border border-slate-200 bg-white">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Ключ</TableHead>
-            <TableHead>Название</TableHead>
-            <TableHead>Описание</TableHead>
-            <TableHead>Переменные</TableHead>
-            <TableHead>Статус</TableHead>
-            <TableHead>Обновлен</TableHead>
-            <TableHead className="text-right">Действия</TableHead>
+          <TableRow className="border-slate-200">
+            <TableHead className="text-slate-950">Ключ</TableHead>
+            <TableHead className="text-slate-950">Название</TableHead>
+            <TableHead className="text-slate-950">Описание</TableHead>
+            <TableHead className="text-slate-950">Переменные</TableHead>
+            <TableHead className="text-slate-950">Статус</TableHead>
+            <TableHead className="text-slate-950">Обновлен</TableHead>
+            <TableHead className="text-right text-slate-950">Действия</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {prompts.map((prompt) => (
-            <TableRow key={prompt.id}>
-              <TableCell className="font-mono text-sm">{prompt.key}</TableCell>
-              <TableCell className="font-medium">{prompt.name}</TableCell>
-              <TableCell className="max-w-xs truncate">
+            <TableRow key={prompt.id} className="border-slate-200 hover:bg-slate-50">
+              <TableCell className="font-mono text-sm text-slate-950">{prompt.key}</TableCell>
+              <TableCell className="font-medium text-slate-950">{prompt.name}</TableCell>
+              <TableCell className="max-w-xs truncate text-slate-600">
                 {prompt.description || '-'}
               </TableCell>
               <TableCell>
                 {prompt.variables && Object.keys(prompt.variables).length > 0 ? (
                   <div className="flex flex-wrap gap-1">
                     {Object.keys(prompt.variables).map((key) => (
-                      <Badge key={key} variant="outline" className="text-xs">
+                      <Badge key={key} variant="outline" className="text-xs border-slate-200 bg-slate-50 text-slate-700">
+                        <Tag className="h-3 w-3 mr-1" />
                         {key}
                       </Badge>
                     ))}
                   </div>
                 ) : (
-                  <span className="text-gray-400">-</span>
+                  <span className="text-slate-400">-</span>
                 )}
               </TableCell>
               <TableCell>
-                <Badge variant={prompt.isActive ? 'default' : 'secondary'}>
-                  {prompt.isActive ? 'Активен' : 'Неактивен'}
+                <Badge 
+                  variant={prompt.isActive ? 'default' : 'secondary'}
+                  className={prompt.isActive ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-700'}
+                >
+                  {prompt.isActive ? (
+                    <>
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Активен
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Неактивен
+                    </>
+                  )}
                 </Badge>
               </TableCell>
-              <TableCell className="text-sm text-gray-500">
-                {new Date(prompt.updatedAt).toLocaleDateString('ru-RU')}
+              <TableCell className="text-sm text-slate-600">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {new Date(prompt.updatedAt).toLocaleDateString('ru-RU')}
+                </div>
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
                     size="sm"
+                    className="border-slate-200 hover:bg-slate-100"
                     onClick={() => onEdit(prompt)}
                   >
+                    <Edit className="h-4 w-4 mr-1" />
                     Редактировать
                   </Button>
                   <Button
@@ -172,6 +198,7 @@ export function PromptTable({ onEdit }: PromptTableProps) {
                     onClick={() => handleDelete(prompt.key)}
                     disabled={deletingId === prompt.key}
                   >
+                    <Trash2 className="h-4 w-4 mr-1" />
                     {deletingId === prompt.key ? 'Удаление...' : 'Удалить'}
                   </Button>
                 </div>

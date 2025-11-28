@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { CheckCircle, XCircle, Globe, Radio } from 'lucide-react';
 
 const schema = z.object({
   name: z.string().min(3, 'Минимум 3 символа').max(100),
@@ -184,34 +185,50 @@ export function SourceForm({ open, onOpenChange }: Props) {
             variant="outline"
             onClick={handleTest}
             disabled={testing}
-            className="w-full"
+            className="w-full border-slate-200 hover:bg-slate-100"
           >
-            {testing ? '⏳ Тестирование...' : '🧪 Тест подключения'}
+            {testing ? (
+              <>
+                <Radio className="h-4 w-4 mr-2 animate-spin" />
+                Тестирование...
+              </>
+            ) : (
+              <>
+                <Globe className="h-4 w-4 mr-2" />
+                Тест подключения
+              </>
+            )}
           </Button>
 
           {testResult && (
             <div
-              className={`p-3 rounded ${
+              className={`p-3 rounded border ${
                 testResult.success
-                  ? 'bg-green-50 text-green-900'
-                  : 'bg-red-50 text-red-900'
+                  ? 'bg-green-50 text-green-900 border-green-200'
+                  : 'bg-red-50 text-red-900 border-red-200'
               }`}
             >
               {testResult.success ? (
                 <>
-                  <p className="font-semibold">✅ Фид работает!</p>
+                  <p className="font-semibold flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    Фид работает!
+                  </p>
                   <p className="text-sm">
                     Найдено {testResult.itemsFound} статей
                   </p>
                   {testResult.sample && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-slate-600 mt-1">
                       Пример: {testResult.sample.title}
                     </p>
                   )}
                 </>
               ) : (
                 <>
-                  <p className="font-semibold">❌ Ошибка</p>
+                  <p className="font-semibold flex items-center gap-2">
+                    <XCircle className="h-4 w-4" />
+                    Ошибка
+                  </p>
                   <p className="text-sm">{testResult.error}</p>
                 </>
               )}

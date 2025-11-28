@@ -67,3 +67,45 @@
   }
 }
 
+@layer utilities {
+  /* Slate color utilities */
+  .bg-slate-page {
+    @apply bg-slate-50;
+  }
+  
+  .bg-slate-card {
+    @apply bg-white;
+  }
+  
+  .border-slate-default {
+    @apply border-slate-200;
+  }
+  
+  .text-slate-primary {
+    @apply text-slate-950;
+  }
+  
+  .text-slate-secondary {
+    @apply text-slate-600;
+  }
+  
+  .hover-slate {
+    @apply hover:bg-slate-100;
+  }
+  
+  /* Button primary (blue) */
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white;
+  }
+  
+  /* Card styles */
+  .card-slate {
+    @apply bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow;
+  }
+  
+  /* Link styles */
+  .link-slate {
+    @apply text-slate-950 hover:text-blue-600 transition-colors;
+  }
+}
+
