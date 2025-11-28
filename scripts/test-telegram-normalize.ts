@@ -55,7 +55,6 @@ const testCases = [
 
 testCases.forEach(testCase => {
   const result = normalizeChannelUsername(testCase);
-  const expected = '@uniannet' || '@bbcnukraine';
   const passed = result.startsWith('@') && !result.includes('https://') && !result.includes('t.me/');
   console.log(`${passed ? '✅' : '❌'} "${testCase}" -> "${result}"`);
 });
