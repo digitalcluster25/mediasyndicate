@@ -167,32 +167,70 @@ export class TelegramParser {
         }
       }
       
-      // Пробуем парсить через cheerio (lazy import)
-      const { load } = await import('cheerio');
-      const $ = load(html);
+      // Пробуем парсить через cheerio (lazy import, опционально)
+      let $: any = null;
+      try {
+        const cheerioModule = await import('cheerio');
+        $ = cheerioModule.load(html);
+      } catch (cheerioError) {
+        console.warn('[TelegramParser] Cheerio not available, trying alternative parsing:', cheerioError);
+        // Продолжаем без cheerio
+      }
       
       const posts: TelegramPost[] = [];
       
       // Ищем посты в структуре страницы
       // Telegram использует структуру с data-post атрибутами
-      $('.tgme_widget_message').each((index, element) => {
-        if (posts.length >= limit) return false;
+      if ($) {
+        // Используем cheerio если доступен
+        $('.tgme_widget_message').each((index, element) => {
+          if (posts.length >= limit) return false;
+          
+          const $msg = $(element);
+          const postId = $msg.attr('data-post')?.split('/').pop() || String(index);
+          const text = $msg.find('.tgme_widget_message_text').text().trim();
+          const dateStr = $msg.find('.tgme_widget_message_date time').attr('datetime');
+          const date = dateStr ? new Date(dateStr) : new Date();
+          
+          if (text) {
+            posts.push({
+              id: parseInt(postId) || index,
+              text: text,
+              date: date,
+              link: `https://t.me/${username}/${postId}`
+            });
+          }
+        });
+      } else {
+        // Fallback: простой парсинг через регулярные выражения
+        console.log('[TelegramParser] Using regex fallback parsing (cheerio not available)');
+        const messageRegex = /<div[^>]*class="tgme_widget_message[^"]*"[^>]*data-post="([^"]+)"[^>]*>([\s\S]*?)<\/div>/g;
+        let match;
+        let index = 0;
         
-        const $msg = $(element);
-        const postId = $msg.attr('data-post')?.split('/').pop() || String(index);
-        const text = $msg.find('.tgme_widget_message_text').text().trim();
-        const dateStr = $msg.find('.tgme_widget_message_date time').attr('datetime');
-        const date = dateStr ? new Date(dateStr) : new Date();
-        
-        if (text) {
-          posts.push({
-            id: parseInt(postId) || index,
-            text: text,
-            date: date,
-            link: `https://t.me/${username}/${postId}`
-          });
+        while ((match = messageRegex.exec(html)) !== null && posts.length < limit) {
+          const postId = match[1].split('/').pop() || String(index);
+          const messageHtml = match[2];
+          
+          // Извлекаем текст из HTML
+          const textMatch = messageHtml.match(/<div[^>]*class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+          const text = textMatch ? textMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+          
+          // Извлекаем дату
+          const dateMatch = messageHtml.match(/<time[^>]*datetime="([^"]+)"[^>]*>/);
+          const date = dateMatch ? new Date(dateMatch[1]) : new Date();
+          
+          if (text) {
+            posts.push({
+              id: parseInt(postId) || index,
+              text: text,
+              date: date,
+              link: `https://t.me/${username}/${postId}`
+            });
+          }
+          index++;
         }
-      });
+      }
       
       // Если не нашли через cheerio, пробуем парсить JSON
       if (posts.length === 0 && jsonMatch) {
