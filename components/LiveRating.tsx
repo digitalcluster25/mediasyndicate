@@ -59,64 +59,6 @@ export function LiveRating() {
       }
     });
 
-    if (itemsToAnimate.size === 0) {
-      prevPositionsRef.current = currentPositions;
-      return;
-    }
-
-    // Запускаем анимацию
-    setAnimatingItems(itemsToAnimate);
-
-    // Используем requestAnimationFrame для плавной анимации
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        // Invert - вычисляем смещение
-        itemsToAnimate.forEach((id) => {
-          const element = itemRefsRef.current.get(id);
-          if (element && firstPositions.has(id)) {
-            const first = firstPositions.get(id)!;
-            const rect = element.getBoundingClientRect();
-            const last = {
-              top: rect.top + window.scrollY,
-              left: rect.left + window.scrollX
-            };
-
-            const deltaY = first.top - last.top;
-            const deltaX = first.left - last.left;
-
-            if (deltaY !== 0 || deltaX !== 0) {
-              // Применяем инверсию
-              element.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-              element.style.transition = 'none';
-            }
-          }
-        });
-
-        // Play - запускаем анимацию
-        requestAnimationFrame(() => {
-          itemsToAnimate.forEach((id) => {
-            const element = itemRefsRef.current.get(id);
-            if (element) {
-              element.style.transition = 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-              element.style.transform = 'translate(0, 0)';
-            }
-          });
-
-          // Очищаем состояние анимации после завершения
-          setTimeout(() => {
-            setAnimatingItems(new Set());
-            itemsToAnimate.forEach((id) => {
-              const element = itemRefsRef.current.get(id);
-              if (element) {
-                element.style.transition = '';
-                element.style.transform = '';
-              }
-            });
-          }, 600);
-        });
-      });
-    });
-
     prevPositionsRef.current = currentPositions;
   }, [articles]);
 
