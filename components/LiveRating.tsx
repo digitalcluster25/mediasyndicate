@@ -13,21 +13,17 @@ const PERIOD_LABELS: Record<Period, string> = {
   day: '24 часа'
 };
 
-const PERIOD_INTERVALS: Record<Period, number> = {
-  online: 30_000,
-  hour: 60_000,
-  day: 300_000
-};
+// Фиксированный интервал обновления метрик (30 секунд)
+const METRICS_UPDATE_INTERVAL = 30_000;
 
 export function LiveRating() {
   const [period, setPeriod] = useState<Period>('hour');
   const { articles, loading, error, lastUpdate, timeUntilNextUpdate, refetch } = 
     useLiveRating({ period, limit: 50 });
 
-  // Прогресс для countdown (0-100%)
-  const totalInterval = PERIOD_INTERVALS[period];
-  const progress = totalInterval > 0 
-    ? Math.min(100, ((totalInterval - timeUntilNextUpdate) / totalInterval) * 100)
+  // Прогресс для countdown (0-100%) - всегда 30 секунд
+  const progress = timeUntilNextUpdate > 0
+    ? Math.min(100, ((METRICS_UPDATE_INTERVAL - timeUntilNextUpdate) / METRICS_UPDATE_INTERVAL) * 100)
     : 0;
   
   const secondsUntilUpdate = Math.ceil(timeUntilNextUpdate / 1000);

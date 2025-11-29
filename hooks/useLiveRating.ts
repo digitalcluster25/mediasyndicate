@@ -75,10 +75,15 @@ export function useLiveRating(options: UseLiveRatingOptions = {}) {
     const countdownInterval = setInterval(() => {
       const remaining = Math.max(0, nextUpdate - Date.now());
       setTimeUntilNextUpdate(remaining);
+      
+      // Если countdown дошел до 0, обновляем данные
+      if (remaining === 0) {
+        fetchRating();
+      }
     }, 1000);
     
     return () => clearInterval(countdownInterval);
-  }, [nextUpdate, enabled]);
+  }, [nextUpdate, enabled, fetchRating]);
 
   return { 
     articles, 

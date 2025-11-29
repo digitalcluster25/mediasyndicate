@@ -116,11 +116,16 @@ export class RatingSnapshotService {
       console.log(`[RatingSnapshot] Updated ${period} snapshot with ${articles.length} articles`);
     }
     
+    // Рассчитываем время до следующего обновления метрик (всегда 30 секунд)
+    const timeUntilNextMetricsUpdate = shouldUpdateMetrics 
+      ? METRICS_UPDATE_INTERVAL // Только что обновили, следующий через 30 сек
+      : Math.max(0, METRICS_UPDATE_INTERVAL - timeSinceLastMetricsUpdate);
+    
     return {
       articles: articlesWithDynamics,
-      lastUpdate: snapshot.timestamp || now,
-      nextUpdate: now + timeUntilNextUpdate,
-      timeUntilNextUpdate
+      lastUpdate: shouldUpdateMetrics ? now : (snapshot.timestamp || now),
+      nextUpdate: now + timeUntilNextMetricsUpdate,
+      timeUntilNextUpdate: timeUntilNextMetricsUpdate
     };
   }
 }
