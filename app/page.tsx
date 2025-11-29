@@ -1,184 +1,110 @@
 import { prisma } from '@/lib/prisma';
-import { Calendar, Globe, ExternalLink, TrendingUp, Eye, Share2, Heart, MessageCircle } from 'lucide-react';
+import Link from 'next/link';
+import { Eye, Heart, Share2, MessageCircle, TrendingUp } from 'lucide-react';
+import { RatingService } from '@/lib/services/RatingService';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  // Получаем последние статьи
-  const recentArticles = await prisma.article.findMany({
-    orderBy: { publishedAt: 'desc' },
-    take: 10,
-    include: {
-      source: true,
-    },
-  });
-
-  // Получаем популярные статьи по рейтингу (если поле rating существует)
-  // Иначе используем publishedAt как fallback
-  let popularArticles: any[] = [];
-  try {
-    popularArticles = await prisma.article.findMany({
-      orderBy: { rating: 'desc' },
-      take: 10,
-      include: {
-        source: true,
-      },
-    });
-  } catch (error: any) {
-    // Если поле rating не существует, используем publishedAt
-    if (error?.code === 'P2022' || error?.message?.includes('does not exist')) {
-      console.warn('[Homepage] Rating field does not exist, using publishedAt for sorting');
-      popularArticles = await prisma.article.findMany({
-        orderBy: { publishedAt: 'desc' },
-        take: 10,
-        include: {
-          source: true,
-        },
-      });
-    } else {
-      throw error;
-    }
-  }
+  // Получить только trending статьи
+  const trending = await RatingService.getTrending(50);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 sm:p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-950 mb-2">MediaSyndicate</h1>
-          <p className="text-slate-600">Агрегатор новостей из RSS и Telegram каналов</p>
+          <div className="flex items-center gap-3 mb-2">
+            <TrendingUp className="w-8 h-8 text-orange-600" />
+            <h1 className="text-4xl font-bold text-slate-900">Trending News</h1>
+          </div>
+          <p className="text-slate-600">
+            Top {trending.length} most engaging stories right now
+          </p>
         </div>
 
-        {/* Секция "Популярное" */}
-        {popularArticles.length > 0 && (
-          <section className="mb-12">
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
-              <h2 className="text-2xl font-bold text-slate-950">Популярное</h2>
-            </div>
-            <div className="space-y-4">
-              {popularArticles.map((article) => (
-                <article 
-                  key={article.id} 
-                  className="bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow p-6"
-                >
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <h3 className="text-lg font-semibold text-slate-950 flex-1">
-                      <a 
-                        href={article.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="hover:text-blue-600 transition-colors flex items-center gap-2"
-                      >
-                        {article.title}
-                        <ExternalLink className="h-4 w-4 text-slate-400" />
-                      </a>
-                    </h3>
-                    {(article as any).rating > 0 && (
-                      <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-sm font-medium">
-                        <TrendingUp className="h-3 w-3" />
-                        {((article as any).rating as number).toFixed(1)}
-                      </div>
-                    )}
+        {/* Trending List */}
+        <div className="space-y-4">
+          {trending.map((article, index) => (
+            <Link
+              key={article.id}
+              href={`/article/${article.id}`}
+              className="block"
+            >
+              <article className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-200 p-6 border border-slate-200 hover:border-orange-300">
+                <div className="flex items-start gap-4">
+                  {/* Rank */}
+                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-lg">
+                    {index + 1}
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-slate-600 mb-3 flex-wrap">
-                    <div className="flex items-center gap-1">
-                      <Globe className="h-4 w-4" />
-                      {article.source.name}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(article.publishedAt).toLocaleDateString('ru-RU', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </div>
-                    {((article as any).views > 0 || (article as any).forwards > 0 || (article as any).reactions > 0 || (article as any).replies > 0) && (
-                      <div className="flex items-center gap-3 ml-auto">
-                        {(article as any).views > 0 && (
-                          <div className="flex items-center gap-1" title="Просмотры">
-                            <Eye className="h-3 w-3" />
-                            <span>{(article as any).views}</span>
-                          </div>
-                        )}
-                        {(article as any).forwards > 0 && (
-                          <div className="flex items-center gap-1" title="Пересылки">
-                            <Share2 className="h-3 w-3" />
-                            <span>{(article as any).forwards}</span>
-                          </div>
-                        )}
-                        {(article as any).reactions > 0 && (
-                          <div className="flex items-center gap-1" title="Реакции">
-                            <Heart className="h-3 w-3" />
-                            <span>{(article as any).reactions}</span>
-                          </div>
-                        )}
-                        {(article as any).replies > 0 && (
-                          <div className="flex items-center gap-1" title="Ответы">
-                            <MessageCircle className="h-3 w-3" />
-                            <span>{(article as any).replies}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  {article.content && (
-                    <p className="text-slate-700 line-clamp-2 leading-relaxed">{article.content}</p>
-                  )}
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
 
-        {/* Секция "Последние новости" */}
-        <section>
-          <h2 className="text-2xl font-bold text-slate-950 mb-4">Последние новости</h2>
-          <div className="space-y-4">
-            {recentArticles.length === 0 ? (
-              <div className="bg-white rounded-lg border border-slate-200 p-8 text-center">
-                <p className="text-slate-600">Статьи не найдены. Импортируйте фиды для начала.</p>
-              </div>
-            ) : (
-              recentArticles.map((article) => (
-                <article 
-                  key={article.id} 
-                  className="bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow p-6"
-                >
-                  <h2 className="text-xl font-semibold text-slate-950 mb-3">
-                    <a 
-                      href={article.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="hover:text-blue-600 transition-colors flex items-center gap-2"
-                    >
-                      {article.title}
-                      <ExternalLink className="h-4 w-4 text-slate-400" />
-                    </a>
-                  </h2>
-                  <div className="flex items-center gap-4 text-sm text-slate-600 mb-3">
-                    <div className="flex items-center gap-1">
-                      <Globe className="h-4 w-4" />
-                      {article.source.name}
+                  <div className="flex-1 min-w-0">
+                    {/* Rating Badge */}
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                        <TrendingUp className="w-3 h-3" />
+                        {article.rating.toFixed(1)}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {article.source.name}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(article.publishedAt).toLocaleDateString('ru-RU', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
+
+                    {/* Title */}
+                    <h2 className="text-xl font-semibold text-slate-900 mb-3 line-clamp-2 hover:text-orange-600 transition-colors">
+                      {article.title}
+                    </h2>
+
+                    {/* Metrics */}
+                    <div className="flex items-center gap-4 text-sm text-slate-600">
+                      {article.views > 0 && (
+                        <span className="flex items-center gap-1.5">
+                          <Eye className="w-4 h-4" />
+                          {formatNumber(article.views)}
+                        </span>
+                      )}
+                      {article.reactions > 0 && (
+                        <span className="flex items-center gap-1.5">
+                          <Heart className="w-4 h-4" />
+                          {formatNumber(article.reactions)}
+                        </span>
+                      )}
+                      {article.forwards > 0 && (
+                        <span className="flex items-center gap-1.5">
+                          <Share2 className="w-4 h-4" />
+                          {formatNumber(article.forwards)}
+                        </span>
+                      )}
+                      {article.replies > 0 && (
+                        <span className="flex items-center gap-1.5">
+                          <MessageCircle className="w-4 h-4" />
+                          {formatNumber(article.replies)}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  {article.content && (
-                    <p className="text-slate-700 line-clamp-3 leading-relaxed">{article.content}</p>
-                  )}
-                </article>
-              ))
-            )}
+                </div>
+              </article>
+            </Link>
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {trending.length === 0 && (
+          <div className="text-center py-20">
+            <TrendingUp className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500 text-lg">
+              No trending articles yet. Check back soon!
+            </p>
           </div>
-        </section>
+        )}
       </div>
     </div>
   );
+}
+
+function formatNumber(num: number): string {
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  return num.toString();
 }

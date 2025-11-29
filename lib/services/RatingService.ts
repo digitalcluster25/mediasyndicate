@@ -69,7 +69,10 @@ export class RatingService {
 
     await prisma.article.update({
       where: { id: articleId },
-      data: { rating }
+      data: { 
+        rating,
+        ratingUpdatedAt: new Date()
+      }
     });
 
     return rating;
@@ -77,14 +80,22 @@ export class RatingService {
 
   /**
    * Пересчитать рейтинг для всех статей
+   * @param hoursBack - опционально, пересчитать только статьи за последние N часов. Если не указано, пересчитывает все статьи.
    */
-  public static async recalculateAllRatings(): Promise<{
+  public static async recalculateAllRatings(hoursBack?: number): Promise<{
     updated: number;
     errors: number;
   }> {
     console.log('[RatingService] Starting recalculation of all ratings...');
 
+    const whereClause = hoursBack ? {
+      publishedAt: {
+        gte: new Date(Date.now() - hoursBack * 60 * 60 * 1000)
+      }
+    } : {};
+
     const articles = await prisma.article.findMany({
+      where: whereClause,
       select: {
         id: true,
         views: true,
@@ -112,7 +123,10 @@ export class RatingService {
 
         await prisma.article.update({
           where: { id: article.id },
-          data: { rating }
+          data: { 
+            rating: Math.round(rating * 10) / 10,
+            ratingUpdatedAt: new Date()
+          }
         });
 
         updated++;
@@ -144,5 +158,25 @@ export class RatingService {
       }
     });
   }
+
+  /**
+   * Получить топ статей по рейтингу (Trending)
+   * Только статьи с позитивным рейтингом
+   */
+  public static async getTrending(limit: number = 50) {
+    return await prisma.article.findMany({
+      where: {
+        rating: { gt: 0 } // Только с позитивным рейтингом
+      },
+      orderBy: {
+        rating: 'desc'
+      },
+      take: limit,
+      include: {
+        source: true
+      }
+    });
+  }
+
 }
 

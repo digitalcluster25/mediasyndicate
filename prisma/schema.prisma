@@ -36,15 +36,17 @@ model Article {
   updatedAt   DateTime @updatedAt
 
   // Mediametrics метрики
-  views     Int   @default(0)
-  forwards  Int   @default(0)
-  reactions Int   @default(0)
-  replies   Int   @default(0)
-  rating    Float @default(0) // Динамический рейтинг по формуле Mediametrics
+  views           Int      @default(0)
+  forwards        Int      @default(0)
+  reactions       Int      @default(0)
+  replies         Int      @default(0)
+  rating          Float    @default(0) // Динамический рейтинг по формуле Mediametrics
+  ratingUpdatedAt DateTime  @default(now())
 
   @@index([sourceId])
   @@index([publishedAt])
   @@index([rating])
+  @@index([ratingUpdatedAt])
   @@index([publishedAt, rating])
 }
 

@@ -4,6 +4,19 @@
  * Использует fetch + regex для парсинга HTML без зависимостей
  */
 export class TelegramParser {
+  /**
+   * Парсинг чисел вида "3.2K", "1.5M" в обычные числа
+   */
+  private static parseMetricValue(value: string): number {
+    const cleaned = value.trim();
+    if (cleaned.endsWith('K') || cleaned.toLowerCase().endsWith('k')) {
+      return Math.round(parseFloat(cleaned.replace(/[kK]/g, '')) * 1000);
+    }
+    if (cleaned.endsWith('M') || cleaned.toLowerCase().endsWith('m')) {
+      return Math.round(parseFloat(cleaned.replace(/[mM]/g, '')) * 1000000);
+    }
+    return parseInt(cleaned.replace(/[^0-9]/g, '')) || 0;
+  }
 
 
   /**
@@ -126,48 +139,32 @@ export class TelegramParser {
         let views = 0;
         if (viewsMatch) {
           const viewsText = viewsMatch[1].replace(/<[^>]+>/g, '').trim();
-          // Парсим числа с K, M суффиксами (например, "1.2K" -> 1200)
-          const viewsNum = viewsText.match(/([\d.]+)/);
-          if (viewsNum) {
-            let num = parseFloat(viewsNum[1]);
-            if (viewsText.toLowerCase().includes('k')) num *= 1000;
-            if (viewsText.toLowerCase().includes('m')) num *= 1000000;
-            views = Math.floor(num);
-          }
+          views = this.parseMetricValue(viewsText);
         }
         
-        // Forwards: ищем количество пересылок в кнопке
-        // Telegram показывает "Forwarded from" или количество в кнопке пересылки
+        // Forwards: ищем количество пересылок
+        // Telegram показывает количество в tgme_widget_message_forwards
         let forwards = 0;
-        const forwardedMatch = messageHtml.match(/<a[^>]*class="tgme_widget_message_forwarded_from[^"]*"[^>]*>/i);
-        if (forwardedMatch) {
-          // Если есть пересылка, ищем количество
-          const forwardCountMatch = messageHtml.match(/<span[^>]*class="tgme_widget_message_forward[^"]*"[^>]*>([\s\S]*?)<\/span>/);
-          if (forwardCountMatch) {
-            const forwardText = forwardCountMatch[1].replace(/<[^>]+>/g, '').trim();
-            const forwardNum = forwardText.match(/([\d.]+)/);
-            if (forwardNum) {
-              let num = parseFloat(forwardNum[1]);
-              if (forwardText.toLowerCase().includes('k')) num *= 1000;
-              if (forwardText.toLowerCase().includes('m')) num *= 1000000;
-              forwards = Math.floor(num);
-            } else {
-              forwards = 1; // Минимум 1 если есть пересылка
-            }
-          } else {
+        const forwardsMatch = messageHtml.match(/<span[^>]*class="tgme_widget_message_forwards[^"]*"[^>]*>([\s\S]*?)<\/span>/);
+        if (forwardsMatch) {
+          const forwardsText = forwardsMatch[1].replace(/<[^>]+>/g, '').trim();
+          forwards = this.parseMetricValue(forwardsText);
+        } else {
+          // Проверяем наличие пересылки (Forwarded from)
+          const forwardedMatch = messageHtml.match(/<a[^>]*class="tgme_widget_message_forwarded_from[^"]*"[^>]*>/i);
+          if (forwardedMatch) {
             forwards = 1; // Минимум 1 если есть пересылка
           }
         }
         
-        // Reactions: ищем эмодзи реакции
+        // Reactions: ищем эмодзи реакции (суммируем все)
         const reactionsMatch = messageHtml.match(/<span[^>]*class="tgme_widget_message_reaction[^"]*"[^>]*>([\s\S]*?)<\/span>/g);
         let reactions = 0;
         if (reactionsMatch) {
           reactionsMatch.forEach((reaction) => {
-            const countMatch = reaction.match(/(\d+)/);
-            if (countMatch) {
-              reactions += parseInt(countMatch[1], 10);
-            }
+            const reactionText = reaction.replace(/<[^>]+>/g, '').trim();
+            const count = this.parseMetricValue(reactionText);
+            reactions += count;
           });
         }
         
