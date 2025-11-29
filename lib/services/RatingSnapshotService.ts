@@ -39,26 +39,59 @@ export class RatingSnapshotService {
     const shouldUpdate = timeSinceLastUpdate >= interval || snapshot.timestamp === 0;
     
     // Автоматически обновляем метрики из Telegram каждые 30 секунд
+    // ВАЖНО: Делаем это асинхронно, чтобы не блокировать ответ API
     const timeSinceLastMetricsUpdate = now - lastMetricsUpdate;
     const shouldUpdateMetrics = timeSinceLastMetricsUpdate >= METRICS_UPDATE_INTERVAL || updateMetrics;
     
-    if (shouldUpdateMetrics) {
+    if (shouldUpdateMetrics && !updateMetrics) {
+      // Обновляем метрики в фоне (не блокируем ответ)
+      // Только если это не явный запрос на обновление
+      (async () => {
+        try {
+          // Lazy import чтобы избежать циклических зависимостей
+          const { TelegramMetricsUpdateService } = await import('./TelegramMetricsUpdateService');
+          const { RatingService } = await import('./RatingService');
+          
+          console.log(`[RatingSnapshot] Updating metrics from Telegram (background)...`);
+          await TelegramMetricsUpdateService.updateAllMetrics();
+          
+          // Пересчитываем рейтинг для всех статей (возраст меняется со временем)
+          console.log(`[RatingSnapshot] Recalculating ratings for all articles (background)...`);
+          await RatingService.recalculateAllRatings(168); // За последние 7 дней
+          
+          lastMetricsUpdate = Date.now();
+        } catch (error) {
+          console.error('[RatingSnapshot] Failed to update metrics (background):', error);
+          // Не критично, продолжаем работу
+        }
+      })();
+      
+      // Обновляем timestamp, чтобы не запускать обновление снова сразу
+      lastMetricsUpdate = now;
+    } else if (updateMetrics) {
+      // Явный запрос на обновление - делаем синхронно, но с таймаутом
       try {
-        // Lazy import чтобы избежать циклических зависимостей
         const { TelegramMetricsUpdateService } = await import('./TelegramMetricsUpdateService');
         const { RatingService } = await import('./RatingService');
         
-        console.log(`[RatingSnapshot] Updating metrics from Telegram...`);
-        await TelegramMetricsUpdateService.updateAllMetrics();
+        console.log(`[RatingSnapshot] Updating metrics from Telegram (sync)...`);
         
-        // Пересчитываем рейтинг для всех статей (возраст меняется со временем)
-        console.log(`[RatingSnapshot] Recalculating ratings for all articles...`);
-        await RatingService.recalculateAllRatings(168); // За последние 7 дней
+        // Добавляем таймаут для обновления метрик
+        const updatePromise = Promise.all([
+          TelegramMetricsUpdateService.updateAllMetrics(),
+          RatingService.recalculateAllRatings(168)
+        ]);
         
-        lastMetricsUpdate = now;
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Metrics update timeout')), 25000) // 25 секунд таймаут
+        );
+        
+        await Promise.race([updatePromise, timeoutPromise]);
+        lastMetricsUpdate = Date.now();
       } catch (error) {
-        console.error('[RatingSnapshot] Failed to update metrics:', error);
+        console.error('[RatingSnapshot] Failed to update metrics (sync):', error);
         // Продолжаем работу даже если обновление метрик не удалось
+        lastMetricsUpdate = now; // Обновляем timestamp, чтобы не повторять сразу
       }
     }
     

@@ -41,23 +41,74 @@ export function useLiveRating(options: UseLiveRatingOptions = {}) {
   const [nextUpdate, setNextUpdate] = useState<number>(0);
   const [timeUntilNextUpdate, setTimeUntilNextUpdate] = useState<number>(0);
 
-  const fetchRating = useCallback(async () => {
+  const fetchRating = useCallback(async (retryCount = 0, silent = false) => {
     try {
-      const res = await fetch(`/api/rating/live?period=${period}&limit=${limit}`);
-      if (!res.ok) throw new Error('Failed to fetch rating');
+      // Добавляем таймаут для запроса (30 секунд)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
+      const res = await fetch(`/api/rating/live?period=${period}&limit=${limit}`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${res.status}`);
+      }
       
       const data = await res.json();
-      setArticles(data.articles);
-      setLastUpdate(data.lastUpdate);
-      setNextUpdate(data.nextUpdate);
-      setTimeUntilNextUpdate(data.timeUntilNextUpdate);
-      setError(null);
+      
+      // Проверяем, есть ли ошибка в ответе
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      // Обновляем данные без показа loading индикатора
+      setArticles(data.articles || []);
+      setLastUpdate(data.lastUpdate || Date.now());
+      setNextUpdate(data.nextUpdate || Date.now() + 30000);
+      setTimeUntilNextUpdate(data.timeUntilNextUpdate || 30000);
+      
+      // Показываем ошибку только если нет данных
+      if (data.articles && data.articles.length > 0) {
+        setError(null);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      
+      // Если это ошибка сети и у нас есть данные, не показываем ошибку
+      if (err instanceof Error && err.name === 'AbortError') {
+        if (articles.length > 0) {
+          // Есть кэшированные данные, просто обновим таймер
+          setTimeUntilNextUpdate(30000);
+          return;
+        }
+        // Показываем ошибку только если нет данных
+        if (!silent) {
+          setError('Request timeout. Retrying...');
+        }
+      } else {
+        // Показываем ошибку только если нет данных и не silent режим
+        if (!silent && articles.length === 0) {
+          setError(errorMessage);
+        }
+      }
+      
+      // Retry логика: максимум 2 попытки с задержкой (silent режим)
+      if (retryCount < 2) {
+        setTimeout(() => {
+          fetchRating(retryCount + 1, true); // Silent retry
+        }, 2000 * (retryCount + 1)); // 2s, 4s
+      }
     } finally {
-      setLoading(false);
+      // Показываем loading только при первой загрузке
+      if (!silent) {
+        setLoading(false);
+      }
     }
-  }, [period, limit]);
+  }, [period, limit, articles.length]);
 
   // Polling для данных
   useEffect(() => {
@@ -76,9 +127,9 @@ export function useLiveRating(options: UseLiveRatingOptions = {}) {
       const remaining = Math.max(0, nextUpdate - Date.now());
       setTimeUntilNextUpdate(remaining);
       
-      // Если countdown дошел до 0, обновляем данные
+      // Если countdown дошел до 0, обновляем данные (silent режим)
       if (remaining === 0) {
-        fetchRating();
+        fetchRating(0, true); // Silent update
       }
     }, 1000);
     

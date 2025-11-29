@@ -13,10 +13,19 @@ export async function GET(request: Request) {
 
     let result;
     try {
-      result = await RatingSnapshotService.getLiveRating(period, limit, updateMetrics);
+      // Добавляем таймаут для получения данных (25 секунд)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Service timeout')), 25000)
+      );
+      
+      result = await Promise.race([
+        RatingSnapshotService.getLiveRating(period, limit, updateMetrics),
+        timeoutPromise
+      ]) as Awaited<ReturnType<typeof RatingSnapshotService.getLiveRating>>;
     } catch (error) {
       console.error('[Live Rating API] RatingSnapshotService error:', error);
-      // Возвращаем пустой результат вместо ошибки
+      
+      // Возвращаем пустой результат вместо ошибки, чтобы не ломать UI
       return NextResponse.json({
         period,
         timestamp: Date.now(),
@@ -24,7 +33,7 @@ export async function GET(request: Request) {
         nextUpdate: Date.now() + 30000,
         timeUntilNextUpdate: 30000,
         articles: []
-      });
+      }, { status: 200 }); // 200 вместо 500, чтобы клиент не показывал ошибку
     }
 
     const { articles, lastUpdate, nextUpdate, timeUntilNextUpdate } = result;
