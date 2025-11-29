@@ -115,27 +115,27 @@ export function LiveRating() {
                     )}
                   </div>
 
-                  {/* Main Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      {/* Hot Badge */}
-                      {article.isHot && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs font-medium">
-                          <Flame className="w-3 h-3" />
-                          HOT
-                        </span>
-                      )}
-                      {/* New Badge */}
-                      {article.isNew && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
-                          <Sparkles className="w-3 h-3" />
-                          NEW
-                        </span>
-                      )}
-                      <span className="text-xs text-slate-500">{article.sourceName}</span>
-                    </div>
+                  {/* Main Content - ONE LINE */}
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    {/* Hot Badge */}
+                    {article.isHot && (
+                      <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs font-medium">
+                        <Flame className="w-3 h-3" />
+                        HOT
+                      </span>
+                    )}
+                    {/* New Badge */}
+                    {article.isNew && (
+                      <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+                        <Sparkles className="w-3 h-3" />
+                        NEW
+                      </span>
+                    )}
+                    {/* Source */}
+                    <span className="flex-shrink-0 text-xs text-slate-500">{article.sourceName}</span>
                     
-                    <h2 className="text-lg font-semibold text-slate-900 line-clamp-1 hover:text-orange-600 transition-colors">
+                    {/* Title - truncate */}
+                    <h2 className="text-base font-semibold text-slate-900 truncate hover:text-orange-600 transition-colors">
                       {article.title}
                     </h2>
                   </div>

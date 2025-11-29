@@ -235,9 +235,9 @@ export class RatingService {
     const updates = articlesWithNewRating.map((article, index) => {
       const newPosition = index + 1;
       const previousPosition = article.currentPosition || 0;
-      const positionChange = previousPosition > 0 
-        ? previousPosition - newPosition // + = вверх, - = вниз
-        : 0;
+      // Если статья впервые в рейтинге, не показываем изменение
+      const isFirstTime = article.currentPosition === 0 || article.currentPosition === null;
+      const positionChange = isFirstTime ? 0 : (article.currentPosition - newPosition); // + = вверх, - = вниз
       const ratingDelta = article.newRating - article.rating;
       const isNew = !article.firstSeenAt || article.currentPosition === 0;
 
