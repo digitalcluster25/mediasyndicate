@@ -45,7 +45,7 @@ export default function PromptsLayout({
             </div>
             <div className="flex items-center gap-4">
               <Link href="/" target="_blank" rel="noopener noreferrer">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button className="bg-slate-700 hover:bg-slate-800 text-white">
                   <Globe className="h-4 w-4 mr-2" />
                   View Site
                 </Button>

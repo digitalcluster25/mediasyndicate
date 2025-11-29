@@ -104,7 +104,7 @@ export function PromptTable({ onEdit }: PromptTableProps) {
   if (error) {
     return (
       <div className="rounded-md border border-slate-200 bg-white p-4 text-center">
-        <p className="text-red-600">
+        <p className="text-slate-600">
           Ошибка загрузки: {error instanceof Error ? error.message : 'Unknown error'}
         </p>
       </div>
@@ -160,7 +160,7 @@ export function PromptTable({ onEdit }: PromptTableProps) {
               <TableCell>
                 <Badge 
                   variant={prompt.isActive ? 'default' : 'secondary'}
-                  className={prompt.isActive ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-700'}
+                  className={prompt.isActive ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-700'}
                 >
                   {prompt.isActive ? (
                     <>

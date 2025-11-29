@@ -162,7 +162,7 @@ export function SourceTable() {
               </TableCell>
               <TableCell>
                 {source.isActive ? (
-                  <Badge className="bg-green-500 text-white flex items-center gap-1 w-fit">
+                  <Badge className="bg-slate-700 text-white flex items-center gap-1 w-fit">
                     <CheckCircle className="h-3 w-3" />
                     Активен
                   </Badge>

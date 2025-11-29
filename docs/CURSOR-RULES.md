@@ -106,6 +106,49 @@ READY TO USE
 2. Add console.log(data)
 3. Check map() on undefined
 
+## COLOR SCHEME RULES
+
+**CRITICAL: Frontend design must use ONLY grayscale colors (slate palette).**
+
+### Allowed Colors:
+- ✅ **ONLY slate colors**: `slate-50`, `slate-100`, `slate-200`, `slate-300`, `slate-400`, `slate-500`, `slate-600`, `slate-700`, `slate-800`, `slate-900`, `slate-950`
+- ✅ **White**: `white`, `bg-white`
+- ✅ **Black**: `black`, `bg-black` (only for text or minimal accents)
+- ✅ **Transparent**: `transparent`, `bg-transparent`
+
+### Forbidden Colors:
+- ❌ **NO orange** (`orange-*`)
+- ❌ **NO red** (`red-*`)
+- ❌ **NO yellow** (`yellow-*`)
+- ❌ **NO green** (`green-*`)
+- ❌ **NO blue** (`blue-*`)
+- ❌ **NO purple** (`purple-*`)
+- ❌ **NO pink** (`pink-*`)
+- ❌ **NO other color palettes**
+
+### Color Usage Guidelines:
+- Use `slate-900` / `slate-950` for primary text
+- Use `slate-600` / `slate-700` for secondary text
+- Use `slate-400` / `slate-500` for muted/disabled text
+- Use `slate-200` / `slate-300` for borders
+- Use `slate-50` / `slate-100` for backgrounds
+- Use `slate-500` / `slate-600` for accents and highlights
+- Use different shades of slate to create visual hierarchy (darker = more important)
+
+### Examples:
+```tsx
+// ✅ CORRECT
+className="text-slate-900 bg-slate-50 border-slate-200"
+className="text-slate-600 hover:text-slate-900"
+className="bg-slate-500 text-white"
+
+// ❌ WRONG
+className="text-orange-600 bg-red-50"
+className="text-blue-600 hover:text-green-600"
+```
+
+**ALL frontend components MUST follow this grayscale-only design system.**
+
 ## CONSEQUENCES
 
 If you deploy without checking:

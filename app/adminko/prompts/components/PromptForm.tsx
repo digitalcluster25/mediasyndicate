@@ -139,7 +139,7 @@ export function PromptForm({ open, onOpenChange, prompt, onSuccess }: Props) {
                 className="font-mono"
               />
               {form.formState.errors.key && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="text-sm text-slate-600 mt-1">
                   {form.formState.errors.key.message}
                 </p>
               )}
@@ -153,7 +153,7 @@ export function PromptForm({ open, onOpenChange, prompt, onSuccess }: Props) {
                 placeholder="Анализ статьи"
               />
               {form.formState.errors.name && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="text-sm text-slate-600 mt-1">
                   {form.formState.errors.name.message}
                 </p>
               )}
@@ -216,7 +216,7 @@ export function PromptForm({ open, onOpenChange, prompt, onSuccess }: Props) {
             <Button
               type="submit"
               disabled={saveMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-slate-700 hover:bg-slate-800"
             >
               <Save className="h-4 w-4 mr-2" />
               {saveMutation.isPending 

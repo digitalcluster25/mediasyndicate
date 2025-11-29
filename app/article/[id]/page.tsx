@@ -34,7 +34,7 @@ export default async function ArticlePage({
         <div className="bg-white rounded-xl shadow-lg p-8 mb-6">
           {/* Rating Badge */}
           {article.rating > 0 && (
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium mb-4">
               <TrendingUp className="w-4 h-4" />
               Rating: {article.rating.toFixed(1)}
             </div>
@@ -97,7 +97,7 @@ export default async function ArticlePage({
               href={article.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+              className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-700 font-medium"
             >
               View Original <ExternalLink className="w-4 h-4" />
             </a>
@@ -108,7 +108,7 @@ export default async function ArticlePage({
         <div className="mt-6">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm hover:shadow-md text-slate-700 hover:text-orange-600 font-medium transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm hover:shadow-md text-slate-700 hover:text-slate-900 font-medium transition-all"
           >
             <ArrowLeft className="w-4 h-4" />
             Назад к рейтингу

@@ -24,7 +24,7 @@ export default function PromptsPage() {
             setEditingPrompt(null);
             setFormOpen(true);
           }}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-slate-700 hover:bg-slate-800"
         >
           <Plus className="h-4 w-4 mr-2" />
           Создать промпт

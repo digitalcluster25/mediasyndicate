@@ -142,7 +142,7 @@ export function SourceForm({ open, onOpenChange }: Props) {
               placeholder="Kyiv Post"
             />
             {form.formState.errors.name && (
-              <p className="text-sm text-red-500 mt-1">
+              <p className="text-sm text-slate-600 mt-1">
                 {form.formState.errors.name.message}
               </p>
             )}
@@ -174,7 +174,7 @@ export function SourceForm({ open, onOpenChange }: Props) {
               }
             />
             {form.formState.errors.url && (
-              <p className="text-sm text-red-500 mt-1">
+              <p className="text-sm text-slate-600 mt-1">
                 {form.formState.errors.url.message}
               </p>
             )}
@@ -204,8 +204,8 @@ export function SourceForm({ open, onOpenChange }: Props) {
             <div
               className={`p-3 rounded border ${
                 testResult.success
-                  ? 'bg-green-50 text-green-900 border-green-200'
-                  : 'bg-red-50 text-red-900 border-red-200'
+                  ? 'bg-slate-100 text-slate-900 border-slate-300'
+                  : 'bg-slate-100 text-slate-700 border-slate-300'
               }`}
             >
               {testResult.success ? (

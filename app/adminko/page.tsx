@@ -84,7 +84,7 @@ function LoginForm() {
           </div>
 
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 p-3 rounded">
+            <div className="text-sm text-slate-700 bg-slate-100 p-3 rounded">
               ❌ {error}
             </div>
           )}

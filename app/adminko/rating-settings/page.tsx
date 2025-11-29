@@ -112,7 +112,7 @@ export default function RatingSettingsPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-slate-600" />
           <p className="text-slate-600">Загрузка настроек...</p>
         </div>
       </div>
@@ -129,13 +129,13 @@ export default function RatingSettingsPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-slate-100 border border-slate-300 text-slate-700 px-4 py-3 rounded">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+        <div className="bg-slate-100 border border-slate-300 text-slate-700 px-4 py-3 rounded">
           Настройки успешно сохранены!
         </div>
       )}
@@ -252,7 +252,7 @@ export default function RatingSettingsPage() {
           <Label htmlFor="description">Описание</Label>
           <textarea
             id="description"
-            className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
             rows={3}
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -280,7 +280,7 @@ export default function RatingSettingsPage() {
           <Button
             type="submit"
             disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-slate-700 hover:bg-slate-800"
           >
             <Save className="h-4 w-4 mr-2" />
             {saving ? 'Сохранение...' : 'Сохранить'}

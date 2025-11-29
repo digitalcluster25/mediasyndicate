@@ -132,7 +132,7 @@ export function LiveRating() {
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <TrendingUp className="w-8 h-8 text-orange-600" />
+              <TrendingUp className="w-8 h-8 text-slate-700" />
               <h1 className="text-3xl font-bold text-slate-900">Live Rating</h1>
             </div>
           </div>
@@ -142,22 +142,22 @@ export function LiveRating() {
             {/* Условные обозначения - скрыты на мобильных */}
             <div className="hidden md:flex items-center gap-2 text-xs text-slate-600 mr-2">
               <div className="flex items-center gap-1">
-                <Flame className="w-3 h-3 text-red-600" />
+                <Flame className="w-3 h-3 text-slate-700" />
                 <span>горячее</span>
               </div>
               <span className="text-slate-300">•</span>
               <div className="flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-yellow-600" />
+                <Sparkles className="w-3 h-3 text-slate-600" />
                 <span>новое</span>
               </div>
               <span className="text-slate-300">•</span>
               <div className="flex items-center gap-1">
-                <TrendingUp className="w-3 h-3 text-green-600" />
+                <TrendingUp className="w-3 h-3 text-slate-700" />
                 <span>вверх</span>
               </div>
               <span className="text-slate-300">•</span>
               <div className="flex items-center gap-1">
-                <TrendingDown className="w-3 h-3 text-red-600" />
+                <TrendingDown className="w-3 h-3 text-slate-500" />
                 <span>вниз</span>
               </div>
             </div>
@@ -180,7 +180,7 @@ export function LiveRating() {
                   cy="18"
                   r="16"
                   fill="none"
-                  stroke="rgb(249 115 22)"
+                  stroke="rgb(71 85 105)"
                   strokeWidth="2"
                   strokeDasharray={`${2 * Math.PI * 16}`}
                   strokeDashoffset={`${2 * Math.PI * 16 * (1 - progress / 100)}`}
@@ -188,7 +188,7 @@ export function LiveRating() {
                   className="transition-all duration-1000 ease-linear"
                 />
               </svg>
-              <Clock className="absolute inset-0 m-auto w-5 h-5 text-orange-600" />
+              <Clock className="absolute inset-0 m-auto w-5 h-5 text-slate-700" />
             </div>
             
             {/* Period Tabs */}
@@ -199,7 +199,7 @@ export function LiveRating() {
                   onClick={() => setPeriod(p)}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                     period === p
-                      ? 'bg-orange-500 text-white shadow'
+                      ? 'bg-slate-700 text-white shadow'
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
@@ -212,8 +212,8 @@ export function LiveRating() {
 
         {/* Error - только если критично */}
         {error && articles.length === 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-            <p className="text-red-600 text-sm">{error}</p>
+          <div className="bg-slate-100 border border-slate-300 rounded-lg p-3 mb-4">
+            <p className="text-slate-700 text-sm">{error}</p>
           </div>
         )}
 
@@ -249,8 +249,8 @@ export function LiveRating() {
                     className={`
                       bg-white rounded-lg shadow-sm hover:shadow-md 
                       transition-all duration-200 px-4 py-3 border-l-4
-                      ${article.isHot ? 'border-l-red-500 bg-red-50/50' : 
-                        article.isNew ? 'border-l-yellow-500 bg-yellow-50/50' : 'border-l-transparent'}
+                      ${article.isHot ? 'border-l-slate-700 bg-slate-50/50' : 
+                        article.isNew ? 'border-l-slate-500 bg-slate-50/30' : 'border-l-transparent'}
                     `}
                   >
                 {/* SINGLE ROW LAYOUT */}
@@ -258,12 +258,12 @@ export function LiveRating() {
                   {/* Position Change - скрыто на мобильных */}
                   <div className="hidden md:flex flex-shrink-0 w-14 text-center">
                     {article.positionChange > 0 ? (
-                      <span className="inline-flex items-center text-green-600 text-sm font-semibold">
+                      <span className="inline-flex items-center text-slate-700 text-sm font-semibold">
                         <TrendingUp className="w-4 h-4 mr-0.5" />
                         +{article.positionChange}
                       </span>
                     ) : article.positionChange < 0 ? (
-                      <span className="inline-flex items-center text-red-600 text-sm font-semibold">
+                      <span className="inline-flex items-center text-slate-500 text-sm font-semibold">
                         <TrendingDown className="w-4 h-4 mr-0.5" />
                         {article.positionChange}
                       </span>
@@ -276,12 +276,12 @@ export function LiveRating() {
                   <div className="flex-1 min-w-0 flex items-center gap-2">
                     {/* Badges - скрыты на мобильных */}
                     {article.isHot && (
-                      <span className="hidden md:flex flex-shrink-0 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-xs font-medium items-center gap-0.5">
+                      <span className="hidden md:flex flex-shrink-0 px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded text-xs font-medium items-center gap-0.5">
                         <Flame className="w-3 h-3" />
                       </span>
                     )}
                     {article.isNew && !article.isHot && (
-                      <span className="hidden md:flex flex-shrink-0 px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs font-medium items-center gap-0.5">
+                      <span className="hidden md:flex flex-shrink-0 px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-xs font-medium items-center gap-0.5">
                         <Sparkles className="w-3 h-3" />
                       </span>
                     )}
@@ -289,7 +289,7 @@ export function LiveRating() {
                     <span className="hidden md:inline flex-shrink-0 text-xs text-slate-400">{article.sourceName}</span>
                     <span className="hidden md:inline text-slate-300">•</span>
                     {/* На мобильных: текст занимает максимум места, оставляя 2ch до рейтинга */}
-                    <h2 className="flex-1 min-w-0 text-sm font-medium text-slate-800 hover:text-orange-600 truncate md:max-w-none" style={{
+                    <h2 className="flex-1 min-w-0 text-sm font-medium text-slate-800 hover:text-slate-600 truncate md:max-w-none" style={{
                       paddingRight: '2ch'
                     }}>
                       {article.title}
@@ -298,13 +298,13 @@ export function LiveRating() {
 
                   {/* Rating */}
                   <div className="flex-shrink-0 text-right min-w-[70px]">
-                    <span className="text-base font-bold text-orange-600">
+                    <span className="text-base font-bold text-slate-700">
                       {Math.round(article.rating)}
                     </span>
                     {/* Показываем дельту только если она не равна 0 */}
                     {article.ratingDelta !== 0 && Math.round(article.ratingDelta) !== 0 && (
                       <span className={`ml-1 text-xs font-medium ${
-                        article.ratingDelta > 0 ? 'text-green-600' : 'text-red-600'
+                        article.ratingDelta > 0 ? 'text-slate-700' : 'text-slate-500'
                       }`}>
                         {article.ratingDelta > 0 ? '+' : ''}{Math.round(article.ratingDelta)}
                       </span>
