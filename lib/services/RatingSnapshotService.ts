@@ -1,4 +1,5 @@
 import { prisma } from '../prisma';
+import { TelegramMetricsUpdateService } from './TelegramMetricsUpdateService';
 
 interface RatingSnapshot {
   timestamp: number;
@@ -22,8 +23,9 @@ const SNAPSHOT_INTERVALS = {
 export class RatingSnapshotService {
   /**
    * Получить рейтинг с динамикой позиций
+   * @param updateMetrics - обновить метрики из Telegram перед получением рейтинга (по умолчанию false)
    */
-  static async getLiveRating(period: 'online' | 'hour' | 'day', limit: number = 50) {
+  static async getLiveRating(period: 'online' | 'hour' | 'day', limit: number = 50, updateMetrics: boolean = false) {
     const now = Date.now();
     const interval = SNAPSHOT_INTERVALS[period];
     const snapshot = snapshots[period];
@@ -32,6 +34,16 @@ export class RatingSnapshotService {
     const timeSinceLastUpdate = now - snapshot.timestamp;
     const timeUntilNextUpdate = Math.max(0, interval - timeSinceLastUpdate);
     const shouldUpdate = timeSinceLastUpdate >= interval || snapshot.timestamp === 0;
+    
+    // Опционально обновляем метрики из Telegram перед получением рейтинга
+    if (updateMetrics) {
+      try {
+        await TelegramMetricsUpdateService.updateAllMetrics();
+      } catch (error) {
+        console.error('[RatingSnapshot] Failed to update metrics:', error);
+        // Продолжаем работу даже если обновление метрик не удалось
+      }
+    }
     
     // Получаем текущий рейтинг из БД
     const articles = await prisma.article.findMany({

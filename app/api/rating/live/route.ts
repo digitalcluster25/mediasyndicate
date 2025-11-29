@@ -9,9 +9,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const period = (searchParams.get('period') || 'hour') as 'online' | 'hour' | 'day';
     const limit = parseInt(searchParams.get('limit') || '50');
+    const updateMetrics = searchParams.get('updateMetrics') === 'true';
 
     const { articles, lastUpdate, nextUpdate, timeUntilNextUpdate } = 
-      await RatingSnapshotService.getLiveRating(period, limit);
+      await RatingSnapshotService.getLiveRating(period, limit, updateMetrics);
 
     const thresholdMinutes = NEW_THRESHOLDS[period];
 
