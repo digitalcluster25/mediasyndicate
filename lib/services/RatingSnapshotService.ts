@@ -105,20 +105,28 @@ export class RatingSnapshotService {
     const periodStartTime = new Date(now - periodMinutes * 60 * 1000);
     
     // Получаем текущий рейтинг из БД с фильтрацией по времени публикации
-    const articlesResult = await prisma.article.findMany({
-      where: { 
-        rating: { gt: 0 },
-        publishedAt: { gte: periodStartTime } // Только статьи за указанный период
-      },
-      orderBy: { rating: 'desc' },
-      take: limit,
-      include: { source: true }
-    }).catch((error) => {
+    // Добавляем таймаут для запроса к БД (10 секунд)
+    let articles: (Awaited<ReturnType<typeof prisma.article.findMany>>);
+    try {
+      const dbPromise = prisma.article.findMany({
+        where: { 
+          rating: { gt: 0 },
+          publishedAt: { gte: periodStartTime } // Только статьи за указанный период
+        },
+        orderBy: { rating: 'desc' },
+        take: limit,
+        include: { source: true }
+      });
+      
+      const dbTimeout = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 10000)
+      );
+      
+      articles = await Promise.race([dbPromise, dbTimeout]);
+    } catch (error) {
       console.error('[RatingSnapshot] Database error:', error);
-      return [];
-    });
-    
-    const articles = articlesResult;
+      articles = [];
+    }
     
     // Рассчитываем динамику
     const articlesWithDynamics = articles.map((article, index) => {

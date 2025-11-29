@@ -13,9 +13,9 @@ export async function GET(request: Request) {
 
     let result;
     try {
-      // Добавляем таймаут для получения данных (25 секунд)
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Service timeout')), 25000)
+      // Добавляем таймаут для получения данных (20 секунд - меньше для быстрого ответа)
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Service timeout')), 20000)
       );
       
       result = await Promise.race([
@@ -25,7 +25,8 @@ export async function GET(request: Request) {
     } catch (error) {
       console.error('[Live Rating API] RatingSnapshotService error:', error);
       
-      // Возвращаем пустой результат вместо ошибки, чтобы не ломать UI
+      // Всегда возвращаем валидный JSON, даже при ошибке
+      // Это предотвращает 502 ошибку
       return NextResponse.json({
         period,
         timestamp: Date.now(),
@@ -33,7 +34,13 @@ export async function GET(request: Request) {
         nextUpdate: Date.now() + 30000,
         timeUntilNextUpdate: 30000,
         articles: []
-      }, { status: 200 }); // 200 вместо 500, чтобы клиент не показывал ошибку
+      }, { 
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      });
     }
 
     const { articles, lastUpdate, nextUpdate, timeUntilNextUpdate } = result;
@@ -44,38 +51,67 @@ export async function GET(request: Request) {
       return (Date.now() - createdAt.getTime()) / (1000 * 60) <= thresholdMinutes;
     }
 
+    // Безопасное маппирование с обработкой ошибок
+    const mappedArticles = articles.map((a: any) => {
+      try {
+        return {
+          id: a.id,
+          title: a.title || '',
+          url: a.url || '',
+          sourceName: (a.source && 'name' in a.source) ? a.source.name : 'Unknown',
+          rating: a.rating || 0,
+          ratingDelta: a.ratingDelta || 0,
+          position: a.currentPosition || 0,
+          positionChange: a.positionChange || 0,
+          views: a.views || 0,
+          reactions: a.reactions || 0,
+          forwards: a.forwards || 0,
+          replies: a.replies || 0,
+          isNew: a.isNew || isNewByAge(a.createdAt, thresholdMinutes),
+          isHot: Math.abs(a.positionChange) >= HOT_THRESHOLD
+        };
+      } catch (err) {
+        console.error('[Live Rating API] Error mapping article:', err, a);
+        return null;
+      }
+    }).filter(Boolean);
+
     return NextResponse.json({
       period,
       timestamp: Date.now(),
       lastUpdate,
       nextUpdate,
       timeUntilNextUpdate,
-      articles: articles.map(a => ({
-        id: a.id,
-        title: a.title,
-        url: a.url,
-        sourceName: a.source.name,
-        rating: a.rating,
-        ratingDelta: a.ratingDelta,
-        position: a.currentPosition,
-        positionChange: a.positionChange,
-        views: a.views,
-        reactions: a.reactions,
-        forwards: a.forwards,
-        replies: a.replies,
-        isNew: a.isNew || isNewByAge(a.createdAt, thresholdMinutes),
-        isHot: Math.abs(a.positionChange) >= HOT_THRESHOLD
-      }))
+      articles: mappedArticles
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
     });
   } catch (error) {
-    console.error('[Live Rating API] Error:', error);
+    console.error('[Live Rating API] Unexpected error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Всегда возвращаем валидный JSON, даже при критической ошибке
     return NextResponse.json(
       { 
+        period: 'hour',
+        timestamp: Date.now(),
+        lastUpdate: Date.now(),
+        nextUpdate: Date.now() + 30000,
+        timeUntilNextUpdate: 30000,
+        articles: [],
         error: 'Failed to fetch',
         details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
       }, 
-      { status: 500 }
+      { 
+        status: 200, // 200 вместо 500, чтобы не вызывать 502
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      }
     );
   }
 }
