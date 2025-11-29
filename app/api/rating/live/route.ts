@@ -17,9 +17,10 @@ export async function GET(request: Request) {
     const articles = await RatingService.getTrendingWithDynamics(limit);
 
     // Функция для определения "новой" статьи
-    const isNew = (firstSeenAt: Date, period: 'online' | 'hour' | 'day'): boolean => {
+    const isNew = (firstSeenAt: Date | null, createdAt: Date, period: 'online' | 'hour' | 'day'): boolean => {
       const thresholdMinutes = NEW_THRESHOLDS[period];
-      const ageMinutes = (Date.now() - firstSeenAt.getTime()) / (1000 * 60);
+      const referenceDate = firstSeenAt || createdAt;
+      const ageMinutes = (Date.now() - referenceDate.getTime()) / (1000 * 60);
       return ageMinutes <= thresholdMinutes;
     };
 
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
         reactions: a.reactions,
         forwards: a.forwards,
         replies: a.replies,
-        isNew: isNew(a.firstSeenAt, period),
+        isNew: isNew(a.firstSeenAt, a.createdAt, period),
         isHot: Math.abs(a.positionChange) >= HOT_THRESHOLD
       }))
     });

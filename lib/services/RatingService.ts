@@ -282,21 +282,58 @@ export class RatingService {
 
   /**
    * Получить топ статей с динамическими данными
+   * Если позиции еще не установлены, использует сортировку по рейтингу
    */
   public static async getTrendingWithDynamics(limit: number = 50) {
-    return await prisma.article.findMany({
+    // Сначала проверим, есть ли статьи с установленными позициями
+    const articlesWithPosition = await prisma.article.findFirst({
       where: {
         rating: { gt: 0 },
-        currentPosition: { gt: 0, lte: limit }
+        currentPosition: { gt: 0 }
+      }
+    });
+
+    // Если позиции установлены, используем их
+    if (articlesWithPosition) {
+      return await prisma.article.findMany({
+        where: {
+          rating: { gt: 0 },
+          currentPosition: { gt: 0, lte: limit }
+        },
+        orderBy: {
+          currentPosition: 'asc'
+        },
+        take: limit,
+        include: {
+          source: true
+        }
+      });
+    }
+
+    // Fallback: если позиции не установлены, используем сортировку по рейтингу
+    // и устанавливаем позиции на лету
+    const articles = await prisma.article.findMany({
+      where: {
+        rating: { gt: 0 }
       },
       orderBy: {
-        currentPosition: 'asc'
+        rating: 'desc'
       },
       take: limit,
       include: {
         source: true
       }
     });
+
+    // Устанавливаем позиции на лету для отображения
+    return articles.map((article, index) => ({
+      ...article,
+      currentPosition: index + 1,
+      positionChange: 0, // Нет данных для сравнения
+      ratingDelta: 0, // Нет данных для сравнения
+      previousRating: article.rating,
+      previousPosition: 0
+    }));
   }
 
 }
