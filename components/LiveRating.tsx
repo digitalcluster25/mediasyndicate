@@ -33,7 +33,10 @@ export function LiveRating() {
 
   // FLIP анимация (First, Last, Invert, Play) для плавного перемещения
   useEffect(() => {
-    if (articles.length === 0) return;
+    if (articles.length === 0) {
+      prevPositionsRef.current.clear();
+      return;
+    }
 
     const currentPositions = new Map(
       articles.map((article, index) => [article.id, index + 1])
@@ -43,20 +46,80 @@ export function LiveRating() {
     const itemsToAnimate = new Set<string>();
     const firstPositions = new Map<string, { top: number; left: number }>();
 
-    // Сохраняем начальные позиции (First)
-    currentPositions.forEach((currentPos, id) => {
-      const prevPos = prevPositionsRef.current.get(id);
-      if (prevPos !== undefined && prevPos !== currentPos) {
-        itemsToAnimate.add(id);
-        const element = itemRefsRef.current.get(id);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          firstPositions.set(id, {
-            top: rect.top + window.scrollY,
-            left: rect.left + window.scrollX
-          });
+    // Сохраняем начальные позиции (First) - после обновления DOM
+    requestAnimationFrame(() => {
+      currentPositions.forEach((currentPos, id) => {
+        const prevPos = prevPositionsRef.current.get(id);
+        if (prevPos !== undefined && prevPos !== currentPos) {
+          itemsToAnimate.add(id);
+          const element = itemRefsRef.current.get(id);
+          if (element) {
+            const rect = element.getBoundingClientRect();
+            firstPositions.set(id, {
+              top: rect.top + window.scrollY,
+              left: rect.left + window.scrollX
+            });
+          }
         }
+      });
+
+      if (itemsToAnimate.size === 0) {
+        prevPositionsRef.current = currentPositions;
+        return;
       }
+
+      // Запускаем анимацию
+      setAnimatingItems(itemsToAnimate);
+
+      // Invert - вычисляем смещение после обновления DOM
+      requestAnimationFrame(() => {
+        itemsToAnimate.forEach((id) => {
+          const element = itemRefsRef.current.get(id);
+          if (element && firstPositions.has(id)) {
+            const first = firstPositions.get(id)!;
+            const rect = element.getBoundingClientRect();
+            const last = {
+              top: rect.top + window.scrollY,
+              left: rect.left + window.scrollX
+            };
+
+            const deltaY = first.top - last.top;
+            const deltaX = first.left - last.left;
+
+            if (Math.abs(deltaY) > 1 || Math.abs(deltaX) > 1) {
+              // Применяем инверсию - перемещаем элемент обратно на старую позицию
+              element.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+              element.style.transition = 'none';
+              element.style.zIndex = '10';
+            }
+          }
+        });
+
+        // Play - запускаем анимацию к новой позиции
+        requestAnimationFrame(() => {
+          itemsToAnimate.forEach((id) => {
+            const element = itemRefsRef.current.get(id);
+            if (element) {
+              // Плавная анимация с easing функцией как на mediametrics.ru
+              element.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+              element.style.transform = 'translate(0, 0)';
+            }
+          });
+
+          // Очищаем состояние анимации после завершения
+          setTimeout(() => {
+            setAnimatingItems(new Set());
+            itemsToAnimate.forEach((id) => {
+              const element = itemRefsRef.current.get(id);
+              if (element) {
+                element.style.transition = '';
+                element.style.transform = '';
+                element.style.zIndex = '';
+              }
+            });
+          }, 500);
+        });
+      });
     });
 
     prevPositionsRef.current = currentPositions;
