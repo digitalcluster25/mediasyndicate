@@ -134,14 +134,19 @@ export function LiveRating() {
             const positionChange = prevPosition ? prevPosition - currentPosition : 0;
             const isMoving = isAnimating && positionChange !== 0 && prevPosition !== undefined;
             
+            // Высота одного элемента с отступом (примерно 60px)
+            const itemHeight = 60;
+            
             return (
               <div
                 key={article.id}
-                className="relative"
+                className="relative transition-all duration-600 ease-in-out"
                 style={{
-                  transition: isMoving ? 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)' : 'transform 0.3s ease-out',
-                  transform: isMoving ? `translateY(${positionChange * 60}px)` : 'translateY(0)',
+                  transform: isMoving ? `translateY(${positionChange * itemHeight}px)` : 'translateY(0)',
                   zIndex: isMoving ? 10 : 1,
+                  transition: isMoving 
+                    ? 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out' 
+                    : 'transform 0.3s ease-out',
                 }}
               >
                 <Link 

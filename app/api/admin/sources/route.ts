@@ -60,7 +60,7 @@ export async function POST(request: Request) {
   
   // Валидация
   const schema = z.object({
-    name: z.string().min(3).max(100),
+    name: z.string().min(1).max(100), // Минимум 1 символ
     type: z.enum(['RSS', 'TELEGRAM']),
     url: z.string().min(1), // Обязательное поле, но валидация URL зависит от типа
     isActive: z.boolean().default(true)

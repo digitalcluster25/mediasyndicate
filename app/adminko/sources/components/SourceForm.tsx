@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, Globe, Radio } from 'lucide-react';
 
 const schema = z.object({
-  name: z.string().min(3, 'Минимум 3 символа').max(100),
+  name: z.string().min(1, 'Обязательное поле').max(100),
   type: z.enum(['RSS', 'TELEGRAM']),
   url: z.string().min(1, 'Обязательное поле'),
   isActive: z.boolean()
