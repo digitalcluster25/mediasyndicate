@@ -45,7 +45,14 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('[Live Rating API] Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      }, 
+      { status: 500 }
+    );
   }
 }
 

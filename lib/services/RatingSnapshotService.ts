@@ -1,5 +1,4 @@
 import { prisma } from '../prisma';
-import { TelegramMetricsUpdateService } from './TelegramMetricsUpdateService';
 
 interface RatingSnapshot {
   timestamp: number;
@@ -38,6 +37,8 @@ export class RatingSnapshotService {
     // Опционально обновляем метрики из Telegram перед получением рейтинга
     if (updateMetrics) {
       try {
+        // Lazy import чтобы избежать циклических зависимостей
+        const { TelegramMetricsUpdateService } = await import('./TelegramMetricsUpdateService');
         await TelegramMetricsUpdateService.updateAllMetrics();
       } catch (error) {
         console.error('[RatingSnapshot] Failed to update metrics:', error);
@@ -46,12 +47,17 @@ export class RatingSnapshotService {
     }
     
     // Получаем текущий рейтинг из БД
-    const articles = await prisma.article.findMany({
+    const articlesResult = await prisma.article.findMany({
       where: { rating: { gt: 0 } },
       orderBy: { rating: 'desc' },
       take: limit,
       include: { source: true }
+    }).catch((error) => {
+      console.error('[RatingSnapshot] Database error:', error);
+      return [];
     });
+    
+    const articles = articlesResult;
     
     // Рассчитываем динамику
     const articlesWithDynamics = articles.map((article, index) => {
