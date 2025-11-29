@@ -62,9 +62,21 @@ export class RatingSnapshotService {
       }
     }
     
-    // Получаем текущий рейтинг из БД
+    // Определяем временной интервал для фильтрации по периоду
+    const periodMinutes = {
+      online: 10,   // 10 минут
+      hour: 60,      // 1 час
+      day: 1440      // 24 часа
+    }[period];
+    
+    const periodStartTime = new Date(now - periodMinutes * 60 * 1000);
+    
+    // Получаем текущий рейтинг из БД с фильтрацией по времени публикации
     const articlesResult = await prisma.article.findMany({
-      where: { rating: { gt: 0 } },
+      where: { 
+        rating: { gt: 0 },
+        publishedAt: { gte: periodStartTime } // Только статьи за указанный период
+      },
       orderBy: { rating: 'desc' },
       take: limit,
       include: { source: true }
