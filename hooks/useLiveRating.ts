@@ -26,9 +26,9 @@ interface UseLiveRatingOptions {
 }
 
 const POLL_INTERVALS = {
-  online: 10_000,   // 10 сек - проверяем чаще чтобы видеть countdown
-  hour: 15_000,     // 15 сек
-  day: 30_000       // 30 сек
+  online: 5_000,    // 5 сек - более частое обновление для динамичности
+  hour: 10_000,     // 10 сек
+  day: 15_000       // 15 сек
 };
 
 export function useLiveRating(options: UseLiveRatingOptions = {}) {

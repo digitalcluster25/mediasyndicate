@@ -21,16 +21,17 @@ export function LiveRating() {
   const { articles, loading, error, timeUntilNextUpdate } = 
     useLiveRating({ period, limit: 50 });
   
-  // Отслеживаем предыдущие позиции для анимации
+  // Отслеживаем предыдущие позиции и DOM элементы для FLIP анимации
   const prevPositionsRef = useRef<Map<string, number>>(new Map());
-  const [isAnimating, setIsAnimating] = useState(false);
+  const itemRefsRef = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [animatingItems, setAnimatingItems] = useState<Set<string>>(new Set());
 
   // Прогресс для часов (0-100%) - всегда 30 секунд
   const progress = timeUntilNextUpdate > 0
     ? Math.min(100, ((METRICS_UPDATE_INTERVAL - timeUntilNextUpdate) / METRICS_UPDATE_INTERVAL) * 100)
     : 0;
 
-  // Обнаруживаем изменения позиций и запускаем анимацию
+  // FLIP анимация (First, Last, Invert, Play) для плавного перемещения
   useEffect(() => {
     if (articles.length === 0) return;
 
@@ -38,21 +39,83 @@ export function LiveRating() {
       articles.map((article, index) => [article.id, index + 1])
     );
 
-    let hasChanges = false;
-    for (const [id, currentPos] of currentPositions) {
+    // Находим элементы, которые изменили позицию
+    const itemsToAnimate = new Set<string>();
+    const firstPositions = new Map<string, { top: number; left: number }>();
+
+    // Сохраняем начальные позиции (First)
+    currentPositions.forEach((currentPos, id) => {
       const prevPos = prevPositionsRef.current.get(id);
       if (prevPos !== undefined && prevPos !== currentPos) {
-        hasChanges = true;
-        break;
+        itemsToAnimate.add(id);
+        const element = itemRefsRef.current.get(id);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          firstPositions.set(id, {
+            top: rect.top + window.scrollY,
+            left: rect.left + window.scrollX
+          });
+        }
       }
+    });
+
+    if (itemsToAnimate.size === 0) {
+      prevPositionsRef.current = currentPositions;
+      return;
     }
 
-    if (hasChanges) {
-      setIsAnimating(true);
-      const timer = setTimeout(() => {
-        setIsAnimating(false);
-      }, 600); // Длительность анимации
-    }
+    // Запускаем анимацию
+    setAnimatingItems(itemsToAnimate);
+
+    // Используем requestAnimationFrame для плавной анимации
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        // Invert - вычисляем смещение
+        itemsToAnimate.forEach((id) => {
+          const element = itemRefsRef.current.get(id);
+          if (element && firstPositions.has(id)) {
+            const first = firstPositions.get(id)!;
+            const rect = element.getBoundingClientRect();
+            const last = {
+              top: rect.top + window.scrollY,
+              left: rect.left + window.scrollX
+            };
+
+            const deltaY = first.top - last.top;
+            const deltaX = first.left - last.left;
+
+            if (deltaY !== 0 || deltaX !== 0) {
+              // Применяем инверсию
+              element.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+              element.style.transition = 'none';
+            }
+          }
+        });
+
+        // Play - запускаем анимацию
+        requestAnimationFrame(() => {
+          itemsToAnimate.forEach((id) => {
+            const element = itemRefsRef.current.get(id);
+            if (element) {
+              element.style.transition = 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+              element.style.transform = 'translate(0, 0)';
+            }
+          });
+
+          // Очищаем состояние анимации после завершения
+          setTimeout(() => {
+            setAnimatingItems(new Set());
+            itemsToAnimate.forEach((id) => {
+              const element = itemRefsRef.current.get(id);
+              if (element) {
+                element.style.transition = '';
+                element.style.transform = '';
+              }
+            });
+          }, 600);
+        });
+      });
+    });
 
     prevPositionsRef.current = currentPositions;
   }, [articles]);
@@ -126,27 +189,28 @@ export function LiveRating() {
           </div>
         )}
 
-        {/* Article List - SINGLE LINE CARDS with Animation */}
+        {/* Article List - SINGLE LINE CARDS with FLIP Animation */}
         <div className="space-y-2 relative">
           {articles.map((article, index) => {
             const currentPosition = index + 1;
             const prevPosition = prevPositionsRef.current.get(article.id);
             const positionChange = prevPosition ? prevPosition - currentPosition : 0;
-            const isMoving = isAnimating && positionChange !== 0 && prevPosition !== undefined;
-            
-            // Высота одного элемента с отступом (примерно 60px)
-            const itemHeight = 60;
+            const isAnimating = animatingItems.has(article.id);
             
             return (
               <div
                 key={article.id}
-                className="relative transition-all duration-600 ease-in-out"
+                ref={(el) => {
+                  if (el) {
+                    itemRefsRef.current.set(article.id, el);
+                  } else {
+                    itemRefsRef.current.delete(article.id);
+                  }
+                }}
+                className="relative"
                 style={{
-                  transform: isMoving ? `translateY(${positionChange * itemHeight}px)` : 'translateY(0)',
-                  zIndex: isMoving ? 10 : 1,
-                  transition: isMoving 
-                    ? 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out' 
-                    : 'transform 0.3s ease-out',
+                  zIndex: isAnimating ? 10 : 1,
+                  willChange: isAnimating ? 'transform' : 'auto',
                 }}
               >
                 <Link 
