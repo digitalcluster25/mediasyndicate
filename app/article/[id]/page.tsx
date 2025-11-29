@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { Eye, Heart, Share2, MessageCircle, TrendingUp, Calendar, ExternalLink } from 'lucide-react';
+import { Eye, Heart, Share2, MessageCircle, TrendingUp, Calendar, ExternalLink, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { uk, ru, enUS } from 'date-fns/locale';
+import Link from 'next/link';
 
 const localeMap = { uk, ru, en: enUS };
 
@@ -39,8 +40,8 @@ export default async function ArticlePage({
             </div>
           )}
 
-          {/* Title */}
-          <h1 className="text-4xl font-bold text-slate-900 mb-6">
+          {/* Title - уменьшен в 2 раза */}
+          <h1 className="text-2xl font-bold text-slate-900 mb-6">
             {article.title}
           </h1>
 
@@ -101,6 +102,17 @@ export default async function ArticlePage({
               View Original <ExternalLink className="w-4 h-4" />
             </a>
           </div>
+        </div>
+
+        {/* Back Button */}
+        <div className="mt-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm hover:shadow-md text-slate-700 hover:text-orange-600 font-medium transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Назад к рейтингу
+          </Link>
         </div>
       </div>
     </div>

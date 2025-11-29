@@ -288,7 +288,10 @@ export function LiveRating() {
                     {/* Source - скрыт на мобильных */}
                     <span className="hidden md:inline flex-shrink-0 text-xs text-slate-400">{article.sourceName}</span>
                     <span className="hidden md:inline text-slate-300">•</span>
-                    <h2 className="truncate text-sm font-medium text-slate-800 hover:text-orange-600">
+                    {/* На мобильных: текст занимает максимум места, оставляя 2ch до рейтинга */}
+                    <h2 className="flex-1 min-w-0 text-sm font-medium text-slate-800 hover:text-orange-600 truncate md:max-w-none" style={{
+                      paddingRight: '2ch'
+                    }}>
                       {article.title}
                     </h2>
                   </div>
@@ -298,7 +301,8 @@ export function LiveRating() {
                     <span className="text-base font-bold text-orange-600">
                       {Math.round(article.rating)}
                     </span>
-                    {article.ratingDelta !== 0 && (
+                    {/* Показываем дельту только если она не равна 0 */}
+                    {article.ratingDelta !== 0 && Math.round(article.ratingDelta) !== 0 && (
                       <span className={`ml-1 text-xs font-medium ${
                         article.ratingDelta > 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
