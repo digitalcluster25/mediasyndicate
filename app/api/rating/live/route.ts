@@ -11,8 +11,23 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const updateMetrics = searchParams.get('updateMetrics') === 'true';
 
-    const { articles, lastUpdate, nextUpdate, timeUntilNextUpdate } = 
-      await RatingSnapshotService.getLiveRating(period, limit, updateMetrics);
+    let result;
+    try {
+      result = await RatingSnapshotService.getLiveRating(period, limit, updateMetrics);
+    } catch (error) {
+      console.error('[Live Rating API] RatingSnapshotService error:', error);
+      // Возвращаем пустой результат вместо ошибки
+      return NextResponse.json({
+        period,
+        timestamp: Date.now(),
+        lastUpdate: Date.now(),
+        nextUpdate: Date.now() + 30000,
+        timeUntilNextUpdate: 30000,
+        articles: []
+      });
+    }
+
+    const { articles, lastUpdate, nextUpdate, timeUntilNextUpdate } = result;
 
     const thresholdMinutes = NEW_THRESHOLDS[period];
 

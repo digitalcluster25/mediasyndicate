@@ -87,3 +87,28 @@ model PromptHistory {
   @@index([promptId])
   @@index([createdAt])
 }
+
+model RatingSettings {
+  id          String   @id @default(cuid())
+  key         String   @unique // 'default' - единственные настройки
+  name        String   @default("Rating Formula Settings")
+  
+  // Веса для формулы рейтинга
+  viewsWeight      Float @default(0.05)   // Views × 0.05
+  forwardsWeight   Float @default(8.0)    // Forwards × 8
+  reactionsWeight  Float @default(3.0)    // Reactions × 3
+  repliesWeight    Float @default(5.0)    // Replies × 5
+  agePenalty       Float @default(2.0)    // Age × 2 (штраф за старость в часах)
+  
+  // Дополнительные настройки
+  minRating        Float? @default(0)     // Минимальный рейтинг (null = без ограничения)
+  maxAgeHours      Int?                   // Максимальный возраст статьи в часах (null = без ограничения)
+  
+  // Метаданные
+  description      String? @db.Text
+  updatedBy        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([key])
+}

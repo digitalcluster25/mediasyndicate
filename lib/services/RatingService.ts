@@ -3,38 +3,121 @@ import { prisma } from '../prisma';
 /**
  * RatingService - расчет рейтинга по формуле Mediametrics
  * 
- * Формула: Rating = (Views×0.05) + (Forwards×8) + (Reactions×3) + (Replies×5) - (Age×2)
+ * Формула: Rating = (Views×weight) + (Forwards×weight) + (Reactions×weight) + (Replies×weight) - (Age×penalty)
  * 
- * Где:
- * - Views × 0.05 (низкий вес)
- * - Forwards × 8 (самый высокий вес!)
- * - Reactions × 3
- * - Replies × 5
- * - Age × 2 (штраф за старость в часах)
- * 
- * Рейтинг может быть отрицательным
+ * Веса настраиваются через админ-панель
  */
 export class RatingService {
+  // Кэш настроек (обновляется при каждом запросе)
+  private static settingsCache: {
+    settings: {
+      viewsWeight: number;
+      forwardsWeight: number;
+      reactionsWeight: number;
+      repliesWeight: number;
+      agePenalty: number;
+      minRating: number | null;
+      maxAgeHours: number | null;
+    } | null;
+    timestamp: number;
+  } = { settings: null, timestamp: 0 };
+
+  private static readonly CACHE_TTL = 60_000; // 1 минута
+
+  /**
+   * Получить настройки рейтинга (с кэшированием)
+   */
+  private static async getSettings() {
+    const now = Date.now();
+    
+    // Проверяем кэш
+    if (
+      this.settingsCache.settings &&
+      (now - this.settingsCache.timestamp) < this.CACHE_TTL
+    ) {
+      return this.settingsCache.settings;
+    }
+
+    // Получаем из БД
+    let settings = await prisma.ratingSettings.findUnique({
+      where: { key: 'default' }
+    });
+
+    // Если нет настроек, создаем по умолчанию
+    if (!settings) {
+      settings = await prisma.ratingSettings.create({
+        data: {
+          key: 'default',
+          name: 'Rating Formula Settings',
+          viewsWeight: 0.05,
+          forwardsWeight: 8.0,
+          reactionsWeight: 3.0,
+          repliesWeight: 5.0,
+          agePenalty: 2.0,
+          minRating: 0,
+          description: 'Default rating formula settings'
+        }
+      });
+    }
+
+    // Обновляем кэш
+    const settingsData = {
+      viewsWeight: settings.viewsWeight,
+      forwardsWeight: settings.forwardsWeight,
+      reactionsWeight: settings.reactionsWeight,
+      repliesWeight: settings.repliesWeight,
+      agePenalty: settings.agePenalty,
+      minRating: settings.minRating,
+      maxAgeHours: settings.maxAgeHours
+    };
+
+    this.settingsCache = {
+      settings: settingsData,
+      timestamp: now
+    };
+
+    return settingsData;
+  }
+
+  /**
+   * Сбросить кэш настроек (вызывать после обновления настроек)
+   */
+  public static clearSettingsCache() {
+    this.settingsCache = { settings: null, timestamp: 0 };
+  }
+
   /**
    * Рассчитать рейтинг для одной статьи
    */
-  public static calculateRating(
+  public static async calculateRating(
     views: number,
     forwards: number,
     reactions: number,
     replies: number,
     publishedAt: Date
-  ): number {
+  ): Promise<number> {
+    const settings = await this.getSettings();
+    
     // Возраст статьи в часах
     const ageHours = (Date.now() - publishedAt.getTime()) / (1000 * 60 * 60);
     
-    // Формула Mediametrics
-    const rating = 
-      (views * 0.05) +
-      (forwards * 8) +
-      (reactions * 3) +
-      (replies * 5) -
-      (ageHours * 2);
+    // Проверка максимального возраста
+    if (settings.maxAgeHours !== null && ageHours > settings.maxAgeHours) {
+      return settings.minRating ?? 0;
+    }
+    
+    // Формула с настраиваемыми весами
+    let rating = 
+      (views * settings.viewsWeight) +
+      (forwards * settings.forwardsWeight) +
+      (reactions * settings.reactionsWeight) +
+      (replies * settings.repliesWeight) -
+      (ageHours * settings.agePenalty);
+    
+    // Применяем минимальный рейтинг
+    if (settings.minRating !== null && rating < settings.minRating) {
+      rating = settings.minRating;
+    }
     
     // Округляем до 2 знаков после запятой
     return Math.round(rating * 100) / 100;
@@ -59,7 +142,7 @@ export class RatingService {
       throw new Error(`Article ${articleId} not found`);
     }
 
-    const rating = this.calculateRating(
+    const rating = await this.calculateRating(
       article.views,
       article.forwards,
       article.reactions,
@@ -113,7 +196,7 @@ export class RatingService {
 
     for (const article of articles) {
       try {
-        const rating = this.calculateRating(
+        const rating = await this.calculateRating(
           article.views,
           article.forwards,
           article.reactions,
@@ -211,16 +294,18 @@ export class RatingService {
     console.log(`[RatingService] Found ${articles.length} articles to update`);
 
     // 2. Пересчитать рейтинги
-    const articlesWithNewRating = articles.map(article => ({
-      ...article,
-      newRating: this.calculateRating(
-        article.views,
-        article.forwards,
-        article.reactions,
-        article.replies,
-        article.publishedAt
-      )
-    }));
+    const articlesWithNewRating = await Promise.all(
+      articles.map(async (article) => ({
+        ...article,
+        newRating: await this.calculateRating(
+          article.views,
+          article.forwards,
+          article.reactions,
+          article.replies,
+          article.publishedAt
+        )
+      }))
+    );
 
     // 3. Отсортировать по новому рейтингу
     articlesWithNewRating.sort((a, b) => b.newRating - a.newRating);

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Home, List, MessageSquare, Settings, Globe, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function PromptsLayout({
+export default function RatingSettingsLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -29,14 +29,14 @@ export default function PromptsLayout({
                 </Link>
                 <Link 
                   href="/adminko/prompts" 
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-950 bg-slate-100 rounded-md"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-slate-950 hover:bg-slate-100 rounded-md transition-colors"
                 >
                   <MessageSquare className="h-4 w-4" />
                   Промпты
                 </Link>
                 <Link 
                   href="/adminko/rating-settings" 
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-slate-950 hover:bg-slate-100 rounded-md transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-950 bg-slate-100 rounded-md"
                 >
                   <TrendingUp className="h-4 w-4" />
                   Рейтинг
