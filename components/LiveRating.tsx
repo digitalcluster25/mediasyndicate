@@ -100,8 +100,8 @@ export function LiveRating() {
           itemsToAnimate.forEach((id) => {
             const element = itemRefsRef.current.get(id);
             if (element) {
-              // Плавная анимация с easing функцией как на mediametrics.ru
-              element.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+              // Плавная анимация с easing функцией как на mediametrics.ru (в 2 раза медленнее)
+              element.style.transition = 'transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
               element.style.transform = 'translate(0, 0)';
             }
           });
@@ -117,7 +117,7 @@ export function LiveRating() {
                 element.style.zIndex = '';
               }
             });
-          }, 500);
+          }, 1000);
         });
       });
     });
@@ -139,6 +139,29 @@ export function LiveRating() {
           
           {/* Period Tabs with Clock */}
           <div className="flex items-center gap-3">
+            {/* Условные обозначения */}
+            <div className="flex items-center gap-2 text-xs text-slate-600 mr-2">
+              <div className="flex items-center gap-1">
+                <Flame className="w-3 h-3 text-red-600" />
+                <span>горячее</span>
+              </div>
+              <span className="text-slate-300">•</span>
+              <div className="flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-yellow-600" />
+                <span>новое</span>
+              </div>
+              <span className="text-slate-300">•</span>
+              <div className="flex items-center gap-1">
+                <TrendingUp className="w-3 h-3 text-green-600" />
+                <span>вверх</span>
+              </div>
+              <span className="text-slate-300">•</span>
+              <div className="flex items-center gap-1">
+                <TrendingDown className="w-3 h-3 text-red-600" />
+                <span>вниз</span>
+              </div>
+            </div>
+            
             {/* Clock Icon with Progress Ring */}
             <div className="relative w-10 h-10 flex-shrink-0">
               <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
@@ -232,15 +255,6 @@ export function LiveRating() {
                   >
                 {/* SINGLE ROW LAYOUT */}
                 <div className="flex items-center gap-3">
-                  {/* Position */}
-                  <div className={`
-                    flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center 
-                    text-sm font-bold text-white
-                    ${index < 3 ? 'bg-orange-500' : 'bg-slate-400'}
-                  `}>
-                    {index + 1}
-                  </div>
-
                   {/* Position Change */}
                   <div className="flex-shrink-0 w-14 text-center">
                     {article.positionChange > 0 ? (
@@ -280,13 +294,13 @@ export function LiveRating() {
                   {/* Rating */}
                   <div className="flex-shrink-0 text-right min-w-[70px]">
                     <span className="text-base font-bold text-orange-600">
-                      {article.rating.toFixed(1)}
+                      {Math.round(article.rating)}
                     </span>
                     {article.ratingDelta !== 0 && (
                       <span className={`ml-1 text-xs font-medium ${
                         article.ratingDelta > 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {article.ratingDelta > 0 ? '+' : ''}{article.ratingDelta.toFixed(1)}
+                        {article.ratingDelta > 0 ? '+' : ''}{Math.round(article.ratingDelta)}
                       </span>
                     )}
                   </div>
