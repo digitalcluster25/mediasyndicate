@@ -37,16 +37,25 @@ model Article {
 
   // Mediametrics метрики
   views           Int      @default(0)
-  forwards        Int      @default(0)
-  reactions       Int      @default(0)
-  replies         Int      @default(0)
-  rating          Float    @default(0) // Динамический рейтинг по формуле Mediametrics
-  ratingUpdatedAt DateTime  @default(now())
+  forwards       Int      @default(0)
+  reactions      Int      @default(0)
+  replies        Int      @default(0)
+  rating         Float    @default(0) // Динамический рейтинг по формуле Mediametrics
+  ratingUpdatedAt DateTime @default(now())
+
+  // Поля для динамики рейтинга
+  previousRating   Float    @default(0)    // Рейтинг на прошлом обновлении
+  previousPosition Int      @default(0)    // Позиция на прошлом обновлении
+  currentPosition  Int      @default(0)    // Текущая позиция
+  positionChange   Int      @default(0)    // Изменение позиции (shift)
+  ratingDelta      Float    @default(0)    // Изменение рейтинга
+  firstSeenAt      DateTime @default(now()) // Когда впервые попала в рейтинг
 
   @@index([sourceId])
   @@index([publishedAt])
   @@index([rating])
   @@index([ratingUpdatedAt])
+  @@index([currentPosition])
   @@index([publishedAt, rating])
 }
 

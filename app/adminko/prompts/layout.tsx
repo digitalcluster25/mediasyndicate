@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, List, MessageSquare, Settings } from 'lucide-react';
+import { Home, List, MessageSquare, Settings, Globe } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function PromptsLayout({
   children,
@@ -36,6 +37,12 @@ export default function PromptsLayout({
               </nav>
             </div>
             <div className="flex items-center gap-4">
+              <Link href="/" target="_blank" rel="noopener noreferrer">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Globe className="h-4 w-4 mr-2" />
+                  View Site
+                </Button>
+              </Link>
               <span className="flex items-center gap-2 text-sm text-slate-600">
                 <Settings className="h-4 w-4" />
                 dev-mode

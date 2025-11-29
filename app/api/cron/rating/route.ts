@@ -19,15 +19,18 @@ export async function GET(request: Request) {
       );
     }
 
-    console.log('[Cron Rating] Starting hourly rating recalculation...');
+    console.log('[Cron Rating] Starting hourly rating recalculation with dynamics...');
     
-    const result = await RatingService.recalculateAllRatings();
+    const result = await RatingService.recalculateWithDynamics();
     
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
       updated: result.updated,
-      errors: result.errors
+      errors: result.errors,
+      newInTop: result.newInTop,
+      movedUp: result.movedUp,
+      movedDown: result.movedDown
     });
   } catch (error) {
     console.error('[Cron Rating Error]:', error);

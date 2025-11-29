@@ -178,5 +178,126 @@ export class RatingService {
     });
   }
 
+  /**
+   * Пересчитать рейтинг с отслеживанием динамики позиций
+   */
+  public static async recalculateWithDynamics(): Promise<{
+    updated: number;
+    errors: number;
+    newInTop: number;
+    movedUp: number;
+    movedDown: number;
+  }> {
+    console.log('[RatingService] Starting recalculation with dynamics...');
+
+    // 1. Получить все статьи с текущими позициями и рейтингами
+    const articles = await prisma.article.findMany({
+      where: {
+        rating: { gt: 0 } // Только с позитивным рейтингом
+      },
+      select: {
+        id: true,
+        views: true,
+        forwards: true,
+        reactions: true,
+        replies: true,
+        publishedAt: true,
+        rating: true,
+        currentPosition: true,
+        firstSeenAt: true
+      }
+    });
+
+    console.log(`[RatingService] Found ${articles.length} articles to update`);
+
+    // 2. Пересчитать рейтинги
+    const articlesWithNewRating = articles.map(article => ({
+      ...article,
+      newRating: this.calculateRating(
+        article.views,
+        article.forwards,
+        article.reactions,
+        article.replies,
+        article.publishedAt
+      )
+    }));
+
+    // 3. Отсортировать по новому рейтингу
+    articlesWithNewRating.sort((a, b) => b.newRating - a.newRating);
+
+    // 4. Подготовить данные для batch update
+    let updated = 0;
+    let errors = 0;
+    let newInTop = 0;
+    let movedUp = 0;
+    let movedDown = 0;
+
+    const updates = articlesWithNewRating.map((article, index) => {
+      const newPosition = index + 1;
+      const previousPosition = article.currentPosition || 0;
+      const positionChange = previousPosition > 0 
+        ? previousPosition - newPosition // + = вверх, - = вниз
+        : 0;
+      const ratingDelta = article.newRating - article.rating;
+      const isNew = !article.firstSeenAt || article.currentPosition === 0;
+
+      if (isNew && newPosition <= 50) {
+        newInTop++;
+      }
+      if (positionChange > 0) {
+        movedUp++;
+      } else if (positionChange < 0) {
+        movedDown++;
+      }
+
+      return prisma.article.update({
+        where: { id: article.id },
+        data: {
+          previousRating: article.rating,
+          previousPosition: article.currentPosition || 0,
+          rating: Math.round(article.newRating * 10) / 10,
+          currentPosition: newPosition,
+          positionChange,
+          ratingDelta: Math.round(ratingDelta * 10) / 10,
+          ratingUpdatedAt: new Date(),
+          firstSeenAt: isNew ? new Date() : article.firstSeenAt
+        }
+      });
+    });
+
+    // 5. Выполнить batch update
+    try {
+      await Promise.all(updates);
+      updated = articlesWithNewRating.length;
+    } catch (error) {
+      console.error('[RatingService] Batch update failed:', error);
+      errors = articlesWithNewRating.length;
+    }
+
+    console.log(`[RatingService] Updated ${updated} articles, ${errors} errors`);
+    console.log(`[RatingService] New in top: ${newInTop}, Moved up: ${movedUp}, Moved down: ${movedDown}`);
+
+    return { updated, errors, newInTop, movedUp, movedDown };
+  }
+
+  /**
+   * Получить топ статей с динамическими данными
+   */
+  public static async getTrendingWithDynamics(limit: number = 50) {
+    return await prisma.article.findMany({
+      where: {
+        rating: { gt: 0 },
+        currentPosition: { gt: 0, lte: limit }
+      },
+      orderBy: {
+        currentPosition: 'asc'
+      },
+      take: limit,
+      include: {
+        source: true
+      }
+    });
+  }
+
 }
 
