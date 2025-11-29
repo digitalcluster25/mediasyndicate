@@ -139,8 +139,8 @@ export function LiveRating() {
           
           {/* Period Tabs with Clock */}
           <div className="flex items-center gap-3">
-            {/* Условные обозначения */}
-            <div className="flex items-center gap-2 text-xs text-slate-600 mr-2">
+            {/* Условные обозначения - скрыты на мобильных */}
+            <div className="hidden md:flex items-center gap-2 text-xs text-slate-600 mr-2">
               <div className="flex items-center gap-1">
                 <Flame className="w-3 h-3 text-red-600" />
                 <span>горячее</span>
@@ -255,8 +255,8 @@ export function LiveRating() {
                   >
                 {/* SINGLE ROW LAYOUT */}
                 <div className="flex items-center gap-3">
-                  {/* Position Change */}
-                  <div className="flex-shrink-0 w-14 text-center">
+                  {/* Position Change - скрыто на мобильных */}
+                  <div className="hidden md:flex flex-shrink-0 w-14 text-center">
                     {article.positionChange > 0 ? (
                       <span className="inline-flex items-center text-green-600 text-sm font-semibold">
                         <TrendingUp className="w-4 h-4 mr-0.5" />
@@ -274,18 +274,20 @@ export function LiveRating() {
 
                   {/* Badges + Source + Title - ALL IN ONE LINE */}
                   <div className="flex-1 min-w-0 flex items-center gap-2">
+                    {/* Badges - скрыты на мобильных */}
                     {article.isHot && (
-                      <span className="flex-shrink-0 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-xs font-medium flex items-center gap-0.5">
+                      <span className="hidden md:flex flex-shrink-0 px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-xs font-medium items-center gap-0.5">
                         <Flame className="w-3 h-3" />
                       </span>
                     )}
                     {article.isNew && !article.isHot && (
-                      <span className="flex-shrink-0 px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs font-medium flex items-center gap-0.5">
+                      <span className="hidden md:flex flex-shrink-0 px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs font-medium items-center gap-0.5">
                         <Sparkles className="w-3 h-3" />
                       </span>
                     )}
-                    <span className="flex-shrink-0 text-xs text-slate-400">{article.sourceName}</span>
-                    <span className="text-slate-300">•</span>
+                    {/* Source - скрыт на мобильных */}
+                    <span className="hidden md:inline flex-shrink-0 text-xs text-slate-400">{article.sourceName}</span>
+                    <span className="hidden md:inline text-slate-300">•</span>
                     <h2 className="truncate text-sm font-medium text-slate-800 hover:text-orange-600">
                       {article.title}
                     </h2>
