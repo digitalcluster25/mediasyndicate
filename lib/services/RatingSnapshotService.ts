@@ -19,6 +19,10 @@ const SNAPSHOT_INTERVALS = {
   day: 300_000      // 5 мин
 };
 
+// Интервал обновления метрик из Telegram (30 секунд)
+const METRICS_UPDATE_INTERVAL = 30_000;
+let lastMetricsUpdate = 0;
+
 export class RatingSnapshotService {
   /**
    * Получить рейтинг с динамикой позиций
@@ -34,12 +38,24 @@ export class RatingSnapshotService {
     const timeUntilNextUpdate = Math.max(0, interval - timeSinceLastUpdate);
     const shouldUpdate = timeSinceLastUpdate >= interval || snapshot.timestamp === 0;
     
-    // Опционально обновляем метрики из Telegram перед получением рейтинга
-    if (updateMetrics) {
+    // Автоматически обновляем метрики из Telegram каждые 30 секунд
+    const timeSinceLastMetricsUpdate = now - lastMetricsUpdate;
+    const shouldUpdateMetrics = timeSinceLastMetricsUpdate >= METRICS_UPDATE_INTERVAL || updateMetrics;
+    
+    if (shouldUpdateMetrics) {
       try {
         // Lazy import чтобы избежать циклических зависимостей
         const { TelegramMetricsUpdateService } = await import('./TelegramMetricsUpdateService');
+        const { RatingService } = await import('./RatingService');
+        
+        console.log(`[RatingSnapshot] Updating metrics from Telegram...`);
         await TelegramMetricsUpdateService.updateAllMetrics();
+        
+        // Пересчитываем рейтинг для всех статей (возраст меняется со временем)
+        console.log(`[RatingSnapshot] Recalculating ratings for all articles...`);
+        await RatingService.recalculateAllRatings(168); // За последние 7 дней
+        
+        lastMetricsUpdate = now;
       } catch (error) {
         console.error('[RatingSnapshot] Failed to update metrics:', error);
         // Продолжаем работу даже если обновление метрик не удалось
