@@ -1,5 +1,6 @@
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
-import { POLL_INTERVALS } from '@/lib/constants/rating';
 
 export interface RatingArticle {
   id: string;
@@ -24,6 +25,12 @@ interface UseLiveRatingOptions {
   enabled?: boolean;
 }
 
+const POLL_INTERVALS = {
+  online: 10_000,   // 10 сек - проверяем чаще чтобы видеть countdown
+  hour: 15_000,     // 15 сек
+  day: 30_000       // 30 сек
+};
+
 export function useLiveRating(options: UseLiveRatingOptions = {}) {
   const { period = 'hour', limit = 50, enabled = true } = options;
   
@@ -31,6 +38,8 @@ export function useLiveRating(options: UseLiveRatingOptions = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<number>(0);
+  const [nextUpdate, setNextUpdate] = useState<number>(0);
+  const [timeUntilNextUpdate, setTimeUntilNextUpdate] = useState<number>(0);
 
   const fetchRating = useCallback(async () => {
     try {
@@ -39,7 +48,9 @@ export function useLiveRating(options: UseLiveRatingOptions = {}) {
       
       const data = await res.json();
       setArticles(data.articles);
-      setLastUpdate(data.timestamp);
+      setLastUpdate(data.lastUpdate);
+      setNextUpdate(data.nextUpdate);
+      setTimeUntilNextUpdate(data.timeUntilNextUpdate);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -48,15 +59,35 @@ export function useLiveRating(options: UseLiveRatingOptions = {}) {
     }
   }, [period, limit]);
 
+  // Polling для данных
   useEffect(() => {
     if (!enabled) return;
     
-    fetchRating(); // Initial fetch
-    
+    fetchRating();
     const interval = setInterval(fetchRating, POLL_INTERVALS[period]);
     return () => clearInterval(interval);
   }, [fetchRating, period, enabled]);
 
-  return { articles, loading, error, lastUpdate, refetch: fetchRating };
+  // Countdown таймер (обновляется каждую секунду)
+  useEffect(() => {
+    if (!enabled || nextUpdate === 0) return;
+    
+    const countdownInterval = setInterval(() => {
+      const remaining = Math.max(0, nextUpdate - Date.now());
+      setTimeUntilNextUpdate(remaining);
+    }, 1000);
+    
+    return () => clearInterval(countdownInterval);
+  }, [nextUpdate, enabled]);
+
+  return { 
+    articles, 
+    loading, 
+    error, 
+    lastUpdate, 
+    nextUpdate,
+    timeUntilNextUpdate,
+    refetch: fetchRating 
+  };
 }
 
