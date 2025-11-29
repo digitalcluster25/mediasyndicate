@@ -43,7 +43,7 @@ export async function PATCH(
   const body = await request.json();
   
   const schema = z.object({
-    name: z.string().min(3).max(100).optional(),
+    name: z.string().min(1).max(100).optional(), // Минимум 1 символ
     url: z.string().url().optional(),
     isActive: z.boolean().optional()
   });
