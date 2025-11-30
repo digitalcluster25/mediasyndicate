@@ -77,3 +77,4 @@ curl -H "Authorization: Bearer YOUR_CRON_SECRET" https://mediasyndicate.online/a
 - При большом количестве источников может потребоваться оптимизация
 - Рекомендуется обновлять не чаще чем раз в 30 секунд
 
+

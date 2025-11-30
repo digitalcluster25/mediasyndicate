@@ -119,3 +119,4 @@ curl -X POST http://localhost:3000/api/admin/sources/test \
 
 После успешного теста - сообщи и я продолжу с production настройкой.
 
+

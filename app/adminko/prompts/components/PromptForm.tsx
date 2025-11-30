@@ -185,7 +185,7 @@ export function PromptForm({ open, onOpenChange, prompt, onSuccess }: Props) {
               className="font-mono text-sm"
             />
             {form.formState.errors.content && (
-              <p className="text-sm text-red-500 mt-1">
+              <p className="text-sm text-slate-600 mt-1">
                 {form.formState.errors.content.message}
               </p>
             )}
