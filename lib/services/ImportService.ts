@@ -1,6 +1,7 @@
 import { prisma } from '../prisma';
 import { RSSParser } from './RSSParser';
 import { RatingService } from './RatingService';
+import { ArticleProcessingService } from './ArticleProcessingService';
 // Lazy import для TelegramParser - загружается только при необходимости
 let TelegramParser: typeof import('./TelegramParser').TelegramParser | null = null;
 
@@ -143,7 +144,10 @@ export class ImportService {
           const article = await prisma.article.upsert({
             where: { url: item.link },
             update: updateData,
-            create: createData,
+            create: {
+              ...createData,
+              processingStatus: 'pending' // Ставим статус ожидания обработки
+            },
           });
           
           // Пересчитываем рейтинг после импорта (только если поля метрик существуют)
@@ -155,6 +159,12 @@ export class ImportService {
               // Не считаем это критической ошибкой
             }
           }
+
+          // Запускаем обработку статьей промптами (асинхронно, не блокируем импорт)
+          ArticleProcessingService.processArticle(article.id).catch((error) => {
+            console.warn(`[ImportService] Failed to process article ${article.id}:`, error);
+            // Не считаем это критической ошибкой - обработка может быть повторена позже
+          });
           
           imported++;
         } catch (error) {
