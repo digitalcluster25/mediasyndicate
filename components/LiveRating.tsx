@@ -1,9 +1,10 @@
 'use client';
 
 import { useLiveRating } from '@/hooks/useLiveRating';
-import { TrendingUp, TrendingDown, Flame, Sparkles, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, Flame, Clock } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { PublicNav } from './PublicNav';
 
 type Period = 'online' | 'hour' | 'day';
 
@@ -127,86 +128,60 @@ export function LiveRating() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <PublicNav />
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <TrendingUp className="w-8 h-8 text-slate-700" />
-              <h1 className="text-3xl font-bold text-slate-900">Live Rating</h1>
-            </div>
+        {/* Period Tabs with Clock and Legend - aligned right */}
+        <div className="mb-6 flex items-center justify-end gap-3">
+          {/* Simplified Legend - only горячее */}
+          <div className="hidden md:flex items-center gap-1 text-xs text-slate-600 mr-2">
+            <Flame className="w-3 h-3 text-slate-700" />
+            <span>горячее</span>
           </div>
           
-          {/* Period Tabs with Clock */}
-          <div className="flex items-center gap-3">
-            {/* Условные обозначения - скрыты на мобильных */}
-            <div className="hidden md:flex items-center gap-2 text-xs text-slate-600 mr-2">
-              <div className="flex items-center gap-1">
-                <Flame className="w-3 h-3 text-slate-700" />
-                <span>горячее</span>
-              </div>
-              <span className="text-slate-300">•</span>
-              <div className="flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-slate-600" />
-                <span>новое</span>
-              </div>
-              <span className="text-slate-300">•</span>
-              <div className="flex items-center gap-1">
-                <TrendingUp className="w-3 h-3 text-slate-700" />
-                <span>вверх</span>
-              </div>
-              <span className="text-slate-300">•</span>
-              <div className="flex items-center gap-1">
-                <TrendingDown className="w-3 h-3 text-slate-500" />
-                <span>вниз</span>
-              </div>
-            </div>
-            
-            {/* Clock Icon with Progress Ring */}
-            <div className="relative w-10 h-10 flex-shrink-0">
-              <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
-                {/* Background circle */}
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="16"
-                  fill="none"
-                  stroke="rgb(226 232 240)"
-                  strokeWidth="2"
-                />
-                {/* Progress circle */}
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="16"
-                  fill="none"
-                  stroke="rgb(71 85 105)"
-                  strokeWidth="2"
-                  strokeDasharray={`${2 * Math.PI * 16}`}
-                  strokeDashoffset={`${2 * Math.PI * 16 * (1 - progress / 100)}`}
-                  strokeLinecap="round"
-                  className="transition-all duration-1000 ease-linear"
-                />
-              </svg>
-              <Clock className="absolute inset-0 m-auto w-5 h-5 text-slate-700" />
-            </div>
-            
-            {/* Period Tabs */}
-            <div className="flex gap-1 bg-white rounded-lg p-1 shadow-sm">
-              {(['online', 'hour', 'day'] as Period[]).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    period === p
-                      ? 'bg-slate-700 text-white shadow'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  {PERIOD_LABELS[p]}
-                </button>
-              ))}
-            </div>
+          {/* Clock Icon with Progress Ring */}
+          <div className="relative w-10 h-10 flex-shrink-0">
+            <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
+              {/* Background circle */}
+              <circle
+                cx="18"
+                cy="18"
+                r="16"
+                fill="none"
+                stroke="rgb(226 232 240)"
+                strokeWidth="2"
+              />
+              {/* Progress circle */}
+              <circle
+                cx="18"
+                cy="18"
+                r="16"
+                fill="none"
+                stroke="rgb(71 85 105)"
+                strokeWidth="2"
+                strokeDasharray={`${2 * Math.PI * 16}`}
+                strokeDashoffset={`${2 * Math.PI * 16 * (1 - progress / 100)}`}
+                strokeLinecap="round"
+                className="transition-all duration-1000 ease-linear"
+              />
+            </svg>
+            <Clock className="absolute inset-0 m-auto w-5 h-5 text-slate-700" />
+          </div>
+          
+          {/* Period Tabs */}
+          <div className="flex gap-1 bg-white rounded-lg p-1 border border-slate-200">
+            {(['online', 'hour', 'day'] as Period[]).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  period === p
+                    ? 'bg-slate-700 text-white'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {PERIOD_LABELS[p]}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -247,10 +222,9 @@ export function LiveRating() {
                 >
                   <article
                     className={`
-                      bg-white rounded-lg shadow-sm hover:shadow-md 
-                      transition-all duration-200 px-4 py-3 border-l-4
-                      ${article.isHot ? 'border-l-slate-700 bg-slate-50/50' : 
-                        article.isNew ? 'border-l-slate-500 bg-slate-50/30' : 'border-l-transparent'}
+                      bg-white rounded-lg border border-slate-200 hover:bg-slate-50 
+                      transition-colors px-4 py-3 border-l-4
+                      ${article.isHot ? 'border-l-slate-700' : 'border-l-transparent'}
                     `}
                   >
                 {/* SINGLE ROW LAYOUT */}
@@ -278,11 +252,6 @@ export function LiveRating() {
                     {article.isHot && (
                       <span className="hidden md:flex flex-shrink-0 px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded text-xs font-medium items-center gap-0.5">
                         <Flame className="w-3 h-3" />
-                      </span>
-                    )}
-                    {article.isNew && !article.isHot && (
-                      <span className="hidden md:flex flex-shrink-0 px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-xs font-medium items-center gap-0.5">
-                        <Sparkles className="w-3 h-3" />
                       </span>
                     )}
                     {/* Source - скрыт на мобильных */}
@@ -315,6 +284,16 @@ export function LiveRating() {
             );
           })}
         </div>
+
+        {/* Load More Button */}
+        {articles.length > 0 && articles.length >= 50 && (
+          <button
+            onClick={() => {/* TODO */}}
+            className="w-full mt-4 bg-white border border-slate-200 rounded-lg px-4 py-4 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            Загрузить еще 50 статей
+          </button>
+        )}
 
         {/* Empty */}
         {articles.length === 0 && (
