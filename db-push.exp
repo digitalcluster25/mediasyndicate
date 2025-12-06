@@ -1,0 +1,6 @@
+#!/usr/bin/expect -f
+set timeout 30
+spawn ssh root@31.172.75.175 "docker exec media-syndicate-dty47f.1.r3t4ekio02gw5olaha2mse58q npx prisma db push --accept-data-loss"
+expect "password:"
+send "GvhujQkfo0jWD6Az\r"
+expect eof

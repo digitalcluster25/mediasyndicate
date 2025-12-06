@@ -1,0 +1,6 @@
+#!/usr/bin/expect -f
+set timeout 30
+spawn ssh root@31.172.75.175 "docker ps | grep media"
+expect "password:"
+send "GvhujQkfo0jWD6Az\r"
+expect eof

@@ -289,7 +289,7 @@ export function LiveRating() {
                     <span className="hidden md:inline flex-shrink-0 text-xs text-slate-400">{article.sourceName}</span>
                     <span className="hidden md:inline text-slate-300">•</span>
                     {/* На мобильных: текст занимает максимум места, оставляя 2ch до рейтинга */}
-                    <h2 className="flex-1 min-w-0 text-sm font-medium text-slate-800 hover:text-slate-600 truncate md:max-w-none" style={{
+                    <h2 className="flex-1 min-w-0 text-sm font-medium text-slate-800 hover:text-slate-600 line-clamp-2 md:line-clamp-1" style={{
                       paddingRight: '2ch'
                     }}>
                       {article.title}
