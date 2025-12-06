@@ -89,7 +89,7 @@ export default async function ArticlePage({
         {/* Back Button */}
         <div className="mt-6">
           <Link
-            href={`/uk/ukraine?period=${period}`}
+            href={`/?period=${period}`}
             className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-medium transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
