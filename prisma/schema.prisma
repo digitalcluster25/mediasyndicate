@@ -59,35 +59,6 @@ model Article {
   @@index([publishedAt, rating])
 }
 
-model Prompt {
-  id          String          @id @default(cuid())
-  key         String          @unique
-  name        String
-  description String?         @db.Text
-  content     String          @db.Text
-  variables   Json? // JSON объект с переменными для подстановки
-  isActive    Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  history     PromptHistory[]
-
-  @@index([key])
-  @@index([isActive])
-}
-
-model PromptHistory {
-  id        String   @id @default(cuid())
-  promptId  String
-  prompt    Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
-  content   String   @db.Text
-  variables Json? // JSON объект с переменными на момент изменения
-  changedBy String? // Кто изменил (опционально)
-  createdAt DateTime @default(now())
-
-  @@index([promptId])
-  @@index([createdAt])
-}
-
 model RatingSettings {
   id          String   @id @default(cuid())
   key         String   @unique // 'default' - единственные настройки
