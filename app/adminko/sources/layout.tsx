@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, List, MessageSquare, Settings, Globe, TrendingUp } from 'lucide-react';
+import { Home, List, Settings, Globe, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function SourcesLayout({
@@ -26,13 +26,6 @@ export default function SourcesLayout({
                 >
                   <List className="h-4 w-4" />
                   Источники
-                </Link>
-                <Link 
-                  href="/adminko/prompts" 
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-slate-950 hover:bg-slate-100 rounded-md transition-colors"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  Промпты
                 </Link>
                 <Link 
                   href="/adminko/rating-settings" 
