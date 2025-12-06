@@ -104,7 +104,6 @@ export class TelegramParser {
       const posts: Array<{
         id: string;
         text: string;
-        boldTitle?: string;
         date: Date;
         link: string;
         views: number;
@@ -125,23 +124,6 @@ export class TelegramParser {
         const messageHtml = match[2];
         
         // Извлекаем полужирный текст как заголовок (если есть в начале)
-        const extractBoldTitle = (html: string): string | null => {
-          // Ищем <b>...</b> или <strong>...</strong> в начале текста
-          const boldMatch = html.match(/<(b|strong)[^>]*>(.*?)<\/(b|strong)>/);
-          if (boldMatch) {
-            const boldText = boldMatch[2]
-              .replace(/<[^>]+>/g, '') // убрать вложенные теги
-              .replace(/&nbsp;/g, ' ')
-              .replace(/&amp;/g, '&')
-              .replace(/&lt;/g, '<')
-              .replace(/&gt;/g, '>')
-              .replace(/&quot;/g, '"')
-              .trim();
-            // Возвращаем только если это не весь текст (т.е. есть что-то после)
-            return boldText.length > 0 && boldText.length < 500 ? boldText : null;
-          }
-          return null;
-        };
         
         // Извлекаем текст сообщения
         const textMatch = messageHtml.match(/<div[^>]*class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/);
@@ -150,7 +132,6 @@ export class TelegramParser {
           : '';
         
         // Пытаемся извлечь заголовок из полужирного текста
-        const boldTitle = textMatch ? extractBoldTitle(textMatch[1]) : null;
         
         // Извлекаем дату
         const dateMatch = messageHtml.match(/<time[^>]*datetime="([^"]+)"[^>]*>/);
@@ -206,7 +187,6 @@ export class TelegramParser {
           posts.push({
             id: postId,
             text: fullText,
-            boldTitle: boldTitle || undefined,
             date: date,
             link: `https://t.me/${username}/${postId}`,
             views: views,
@@ -232,12 +212,9 @@ export class TelegramParser {
       
       // Преобразуем в формат RSS с метриками
       const items = sortedPosts.map((post) => {
-        const titleText = post.boldTitle || (
-          post.text.length > 100 
-            ? post.text.substring(0, 100) + '...'
-            : post.text || `Post #${post.id}`
-        );
-        
+        const titleText = post.text.length > 100 
+          ? post.text.substring(0, 100) + '...' 
+          : post.text || `Post #${post.id}`;        
         return {
           title: titleText,
           description: post.text,
