@@ -242,7 +242,7 @@ export function LiveRating() {
                 }}
               >
                 <Link 
-                  href={`/article/${article.id}`} 
+                  href={`/article/${article.id}?period=${period}`} 
                   className="block"
                 >
                   <article
