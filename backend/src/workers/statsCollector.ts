@@ -1,8 +1,8 @@
 import prisma from '../utils/prisma';
+import { fetchChannelStats } from '../services/telegram';
 
 /**
  * Daily cron job: fetch stats from Telegram API and compute engagement scores.
- * Runs via node-cron in production or manual trigger in dev.
  */
 export async function collectDailyStats(): Promise<void> {
   console.log('[worker] Starting daily stats collection...');
@@ -14,6 +14,7 @@ export async function collectDailyStats(): Promise<void> {
 
   let processed = 0;
   let errors = 0;
+  let hasAdminAccess = 0;
 
   for (const channel of channels) {
     try {
@@ -22,13 +23,14 @@ export async function collectDailyStats(): Promise<void> {
         orderBy: { recordedAt: 'desc' },
       });
 
-      // In production, replace this with actual Telegram API calls:
-      // const tgStats = await fetchChannelStats(channel.username);
-      // For now, use placeholder with 0 values — real data from Telegram API
-      const subscribers = 0; // tgStats.subscribers
-      const reactions = 0;   // tgStats.reactions (last 24h)
-      const reposts = 0;     // tgStats.reposts (last 24h)
-      const comments = 0;    // tgStats.comments (last 24h)
+      const tgStats = await fetchChannelStats(channel.username);
+
+      if (!tgStats) {
+        errors++;
+        continue;
+      }
+
+      const { subscribers, reactions, reposts, comments } = tgStats;
 
       // Engagement score formula: reactions * 0.1 + reposts * 1 + comments * 2
       const engagementScore = reactions * 0.1 + reposts * 1 + comments * 2;
@@ -37,6 +39,9 @@ export async function collectDailyStats(): Promise<void> {
       const growthRate = prevStats && prevStats.subscribers > 0
         ? ((subscribers - prevStats.subscribers) / prevStats.subscribers) * 100
         : 0;
+
+      // Track if we got real data beyond subscribers
+      if (reactions > 0 || reposts > 0 || comments > 0) hasAdminAccess++;
 
       await prisma.channelStat.create({
         data: {
@@ -51,17 +56,17 @@ export async function collectDailyStats(): Promise<void> {
       });
 
       processed++;
-    } catch (error) {
-      console.error(`[worker] Error processing channel ${channel.username}:`, error);
+    } catch (err) {
+      console.error(`[worker] Error processing @${channel.username}:`, err);
       errors++;
     }
   }
 
-  console.log(`[worker] Completed: ${processed} channels processed, ${errors} errors`);
+  console.log(`[worker] Stats collected: ${processed} channels, ${errors} errors, ${hasAdminAccess} with admin access`);
 }
 
 /**
- * Update composite ranking for all channels after stats collection.
+ * Update composite ranking after stats collection.
  */
 export async function recalculateRankings(): Promise<void> {
   console.log('[worker] Recalculating rankings...');
