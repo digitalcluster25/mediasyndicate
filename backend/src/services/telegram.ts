@@ -73,12 +73,14 @@ bot?.command('add', async (ctx: Context) => {
 
     const title = 'title' in chat ? (chat.title ?? username) : username;
     const description = ('description' in chat ? (chat as any).description : null) as string | null;
+    const chatType = 'type' in chat ? chat.type : null;
 
     await prisma.moderationQueue.create({
       data: {
         username,
         title,
         description: description || null,
+        type: chatType || null,
         status: 'pending',
       },
     });

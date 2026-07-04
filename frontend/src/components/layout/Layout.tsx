@@ -16,7 +16,7 @@ export default function Layout() {
               Рейтинг
             </Link>
             <Link to="/channels" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-              Каналы
+              Каталог
             </Link>
             <Link to="/about" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
               О проекте

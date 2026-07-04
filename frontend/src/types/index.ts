@@ -5,6 +5,7 @@ export interface Channel {
   title: string;
   description: string | null;
   imageUrl: string | null;
+  type: string | null;
   categoryId: number | null;
   category: { id: number; name: string; slug: string } | null;
   country: string | null;
@@ -48,6 +49,7 @@ export interface RankingEntry {
   title: string;
   description: string | null;
   imageUrl: string | null;
+  type: string | null;
   category: { id: number; name: string; slug: string } | null;
   country: string | null;
   language: string | null;

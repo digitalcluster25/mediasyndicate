@@ -52,6 +52,7 @@ router.get('/', async (req, res) => {
         title: c.title,
         description: c.description,
         imageUrl: c.imageUrl,
+        type: c.type,
         category: c.category,
         country: c.country,
         language: c.language,

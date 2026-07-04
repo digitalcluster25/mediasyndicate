@@ -76,6 +76,7 @@ export default function RankingPage() {
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-gray-900 truncate">{channel.title}</h3>
                       {channel.category && <Badge variant="secondary">{channel.category.name}</Badge>}
+                      {channel.type && <Badge variant="outline">{channel.type === 'channel' ? 'Канал' : channel.type === 'supergroup' ? 'Чат' : channel.type}</Badge>}
                       {channel.country && <Badge variant="outline">{channel.country}</Badge>}
                     </div>
                     <p className="text-sm text-gray-500 truncate">@{channel.username}</p>

@@ -62,6 +62,7 @@ router.post('/moderate/:id', async (req, res) => {
           username: entry.username,
           title: entry.title,
           description: entry.description,
+          type: (entry as any).type || null,
           categoryId: entry.categoryId,
           status: 'approved',
         },
