@@ -8,13 +8,69 @@ if (!bot) {
   console.warn('[telegram] TELEGRAM_BOT_TOKEN not set — bot disabled');
 }
 
+function extractUsername(text: string): string | null {
+  // @username
+  let match = text.match(/@(\w+)/);
+  if (match) return match[1];
+  // https://t.me/username or t.me/username
+  match = text.match(/(?:https?:\/\/)?t\.me\/(\w+)/i);
+  if (match) return match[1];
+  // tg://resolve?domain=username
+  match = text.match(/tg:\/\/resolve\?domain=(\w+)/i);
+  if (match) return match[1];
+  return null;
+}
+
+async function handleAdd(ctx: Context, username: string) {
+  try {
+    const existing = await prisma.channel.findUnique({ where: { username } });
+    if (existing) {
+      await ctx.reply(`✅ @${username} уже в каталоге: https://mediasyndicate.online/channels/${existing.id}`);
+      return;
+    }
+
+    const inQueue = await prisma.moderationQueue.findFirst({ where: { username, status: 'pending' } });
+    if (inQueue) {
+      await ctx.reply(`⏳ @${username} уже ожидает модерации.`);
+      return;
+    }
+
+    const chat = await ctx.api.getChat(`@${username}`).catch(() => null);
+    if (!chat) {
+      await ctx.reply(`❌ Не удалось получить @${username}. Проверьте, что канал/чат публичный.`);
+      return;
+    }
+
+    const title = 'title' in chat ? (chat.title ?? username) : username;
+    const description = ('description' in chat ? (chat as any).description : null) as string | null;
+    const chatType = 'type' in chat ? chat.type : null;
+    const typeLabel = chatType === 'channel' ? 'Канал' : chatType === 'supergroup' ? 'Чат' : chatType || '';
+
+    await prisma.moderationQueue.create({
+      data: { username, title, description: description || null, type: chatType || null, status: 'pending' },
+    });
+
+    await ctx.reply(
+      `✅ ${typeLabel} *${title}* (@${username}) отправлен на модерацию.\n\nПосле одобрения: https://mediasyndicate.online`,
+      { parse_mode: 'Markdown' },
+    );
+  } catch (err) {
+    console.error('[telegram] handleAdd error:', err);
+    await ctx.reply('Ошибка. Попробуйте позже.');
+  }
+}
+
 // Command: /start
 bot?.command('start', async (ctx: Context) => {
   await ctx.reply(
     '👋 MediaSyndicate Bot\n\n' +
+    'Просто пришлите ссылку на канал или чат:\n' +
+    '• @username\n' +
+    '• t.me/username\n' +
+    '• https://t.me/username\n\n' +
     'Команды:\n' +
-    '/add @username — предложить канал в рейтинг\n' +
-    '/stats @username — базовая статистика канала\n' +
+    '/add — добавить канал/чат\n' +
+    '/stats @username — статистика\n' +
     '/help — справка',
   );
 });
@@ -34,65 +90,28 @@ bot?.command('help', async (ctx: Context) => {
   );
 });
 
-// Command: /add @username
+// Command: /add — accepts @username, t.me/username, https://t.me/username
 bot?.command('add', async (ctx: Context) => {
   const text = ctx.message?.text || '';
-  const match = text.match(/@(\w+)/);
+  const username = extractUsername(text);
 
-  if (!match) {
-    await ctx.reply('Укажите username канала: `/add @username`', { parse_mode: 'Markdown' });
+  if (!username) {
+    await ctx.reply('Пришлите ссылку: @username, t.me/username, или https://t.me/username');
     return;
   }
 
-  const username = match[1];
+  await handleAdd(ctx, username);
+});
 
-  try {
-    // Check if channel already exists
-    const existing = await prisma.channel.findUnique({ where: { username } });
-    if (existing) {
-      await ctx.reply(`Канал @${username} уже в каталоге: https://mediasyndicate.online/channels/${existing.id}`);
-      return;
-    }
+// Handle plain text links (no /add prefix)
+bot?.on('message:text', async (ctx: Context) => {
+  const text = ctx.message?.text || '';
+  // Skip commands
+  if (text.startsWith('/')) return;
 
-    // Check moderation queue
-    const inQueue = await prisma.moderationQueue.findFirst({
-      where: { username, status: 'pending' },
-    });
-    if (inQueue) {
-      await ctx.reply(`Канал @${username} уже ожидает модерации.`);
-      return;
-    }
-
-    // Fetch channel info from Telegram
-    const chat = await ctx.api.getChat(`@${username}`).catch(() => null);
-
-    if (!chat) {
-      await ctx.reply(`Не удалось получить информацию о канале @${username}. Проверьте username.`);
-      return;
-    }
-
-    const title = 'title' in chat ? (chat.title ?? username) : username;
-    const description = ('description' in chat ? (chat as any).description : null) as string | null;
-    const chatType = 'type' in chat ? chat.type : null;
-
-    await prisma.moderationQueue.create({
-      data: {
-        username,
-        title,
-        description: description || null,
-        type: chatType || null,
-        status: 'pending',
-      },
-    });
-
-    await ctx.reply(
-      `✅ Канал *${title}* (@${username}) отправлен на модерацию.\n\n` +
-      `После одобрения появится на https://mediasyndicate.online`,
-      { parse_mode: 'Markdown' },
-    );
-  } catch (err) {
-    console.error('[telegram] /add error:', err);
-    await ctx.reply('Ошибка. Попробуйте позже.');
+  const username = extractUsername(text);
+  if (username) {
+    await handleAdd(ctx, username);
   }
 });
 
