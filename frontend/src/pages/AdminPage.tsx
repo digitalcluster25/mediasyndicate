@@ -2,11 +2,37 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, ShieldAlert } from 'lucide-react';
+import { Check, X, ShieldAlert, LogOut, Lock } from 'lucide-react';
 
-async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`/api${url}`, options);
+const API = '/api/admin';
+
+function getToken(): string | null {
+  return localStorage.getItem('admin_token');
+}
+
+function setToken(token: string) {
+  localStorage.setItem('admin_token', token);
+}
+
+function clearToken() {
+  localStorage.removeItem('admin_token');
+}
+
+async function fetchAuth<T>(url: string, options?: RequestInit): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string> || {}),
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API}${url}`, { ...options, headers });
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('Unauthorized');
+  }
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
@@ -22,51 +48,83 @@ interface QueueEntry {
 }
 
 export default function AdminPage() {
-  const queryClient = useQueryClient();
-  const [status, setStatus] = useState('admin');
-  const [message, setMessage] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(!!getToken());
 
-  // Simple auth placeholder — in production use real auth
-  if (status !== 'admin') {
-    return (
-      <div className="max-w-md mx-auto px-4 py-16">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><ShieldAlert className="h-5 w-5" /> Админ-панель</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <input
-              type="password"
-              placeholder="Пароль администратора"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm"
-              onKeyDown={(e) => e.key === 'Enter' && message.length > 0 && setStatus('admin')}
-            />
-            <Button className="w-full" onClick={() => message.length > 0 && setStatus('admin')}>Войти</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!isLoggedIn) {
+    return <LoginForm onLogin={() => setIsLoggedIn(true)} />;
   }
 
-  return <ModerationQueue />;
+  return <ModerationQueue onLogout={() => { clearToken(); setIsLoggedIn(false); }} />;
 }
 
-function ModerationQueue() {
+function LoginForm({ onLogin }: { onLogin: () => void }) {
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Ошибка входа');
+      } else {
+        setToken(data.token);
+        onLogin();
+      }
+    } catch {
+      setError('Ошибка соединения');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+            <Lock className="h-6 w-6 text-gray-600" />
+          </div>
+          <CardTitle>Админ-панель</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Input
+            type="password"
+            placeholder="Пароль администратора"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+          />
+          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+          <Button className="w-full" onClick={handleLogin} disabled={loading}>
+            {loading ? 'Вход...' : 'Войти'}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ModerationQueue({ onLogout }: { onLogout: () => void }) {
   const queryClient = useQueryClient();
 
   const { data: queue, isLoading } = useQuery({
     queryKey: ['admin-queue'],
-    queryFn: () => fetchJSON<QueueEntry[]>('/admin/queue', { headers: { 'x-admin-password': 'admin' } }),
+    queryFn: () => fetchAuth<QueueEntry[]>('/queue'),
     refetchInterval: 30000,
   });
 
   const moderateMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) =>
-      fetchJSON(`/admin/moderate/${id}`, {
+      fetchAuth(`/moderate/${id}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-queue'] }),
@@ -74,7 +132,12 @@ function ModerationQueue() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Модерация</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Модерация</h1>
+        <Button variant="outline" size="sm" onClick={onLogout}>
+          <LogOut className="h-4 w-4 mr-1" /> Выйти
+        </Button>
+      </div>
 
       {isLoading ? (
         <div className="space-y-3">
@@ -85,7 +148,7 @@ function ModerationQueue() {
       ) : !queue || queue.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center text-gray-500">
-            Очередь модерации пуста.
+            Очередь модерации пуста. Отправьте /add @username боту @mediasyndicate_parser_bot
           </CardContent>
         </Card>
       ) : (
@@ -99,7 +162,7 @@ function ModerationQueue() {
                     <p className="text-sm text-gray-500">@{entry.username}</p>
                     {entry.description && <p className="text-sm text-gray-600 mt-1">{entry.description}</p>}
                     <p className="text-xs text-gray-400 mt-1">
-                      Добавлен: {new Date(entry.createdAt).toLocaleString()}
+                      {new Date(entry.createdAt).toLocaleString()}
                       <Badge className="ml-2">{entry.status}</Badge>
                     </p>
                   </div>
