@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  slug      String    @unique
+  channels  Channel[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("categories")
+}
+
+model Channel {
+  id            Int       @id @default(autoincrement())
+  telegramId    BigInt?   @unique @map("telegram_id")
+  username      String    @unique
+  title         String
+  description   String?   @db.Text
+  categoryId    Int?      @map("category_id")
+  category      Category? @relation(fields: [categoryId], references: [id])
+  country       String?   @db.VarChar(100)
+  language      String?   @db.VarChar(50)
+  imageUrl      String?   @map("image_url")
+  status        String    @default("approved") @db.VarChar(20)
+  totalScore    Float     @default(0) @map("total_score")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  stats         ChannelStat[]
+  posts         ChannelPost[]
+  expertRatings ExpertRating[]
+
+  @@map("channels")
+}
+
+model ChannelStat {
+  id              Int      @id @default(autoincrement())
+  channelId       Int      @map("channel_id")
+  channel         Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  subscribers     Int      @default(0)
+  reactions       Int      @default(0)
+  reposts         Int      @default(0)
+  comments        Int      @default(0)
+  engagementScore Float    @default(0) @map("engagement_score")
+  growthRate      Float    @default(0) @map("growth_rate")
+  recordedAt      DateTime @default(now()) @map("recorded_at")
+
+  @@unique([channelId, recordedAt])
+  @@map("channel_stats")
+}
+
+model ChannelPost {
+  id         Int      @id @default(autoincrement())
+  channelId  Int      @map("channel_id")
+  channel    Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  postId     BigInt   @map("post_id")
+  text       String?  @db.Text
+  reactions  Int      @default(0)
+  reposts    Int      @default(0)
+  comments   Int      @default(0)
+  views      Int      @default(0)
+  postedAt   DateTime @map("posted_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([channelId, postId])
+  @@map("channel_posts")
+}
+
+model ExpertRating {
+  id        Int      @id @default(autoincrement())
+  channelId Int      @map("channel_id")
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  rating    Int      @db.SmallInt
+  ratedBy   String   @default("admin") @map("rated_by") @db.VarChar(100)
+  comment   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("expert_ratings")
+}
+
+model ModerationQueue {
+  id          Int       @id @default(autoincrement())
+  channelId   Int?      @map("channel_id")
+  telegramId  BigInt?   @map("telegram_id")
+  username    String
+  title       String
+  description String?   @db.Text
+  categoryId  Int?      @map("category_id")
+  status      String    @default("pending") @db.VarChar(20)
+  reviewedBy  String?   @map("reviewed_by") @db.VarChar(100)
+  reviewedAt  DateTime? @map("reviewed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("moderation_queue")
+}
