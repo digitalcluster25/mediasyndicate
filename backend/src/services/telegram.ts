@@ -176,7 +176,6 @@ export function startBot(): void {
   if (!bot) return;
   bot.start({
     onStart: (info) => console.log(`[telegram] Bot @${info.username} started`),
-    drop_pending_updates: true,
   });
   console.log('[telegram] Bot polling started');
 }
